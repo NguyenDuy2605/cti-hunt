@@ -1,0 +1,23 @@
+# Cấu hình mô hình cho khâu ② (API cá nhân của người vận hành).
+# Mô hình chốt 23/9: claude-opus-5-5 — không thuộc họ OpenAI (bộ tham chiếu Silver v1 do GPT-5 sinh),
+# mốc kiến thức 06/2026, giá 4/20 USD mỗi triệu token, cam kết phục vụ tới ít nhất 22/09/2027.
+# Không để khóa API trong file này; đặt vào biến môi trường có tên ghi ở api_key_env.
+provider: anthropic         # mock | anthropic | openai_compatible
+model: claude-opus-5-5      # ID ghim sẵn, không có hậu tố ngày (tài liệu Anthropic, đọc 23/9)
+base_url: ""                # để trống dùng endpoint mặc định của provider
+api_key_env: LLM_API_KEY
+# Họ Claude 5 và Opus 4.7 trở lên đã BỎ tham số lấy mẫu: gửi temperature lên là lỗi 400.
+# Adapter tự nhận biết theo tên mô hình và chỉ gửi cho đời 4.6 trở xuống / Haiku 4.5.
+# Hệ quả phải ghi vào hạn chế: với claude-opus-5-5 KHÔNG ghim được temperature=0.
+temperature: 0              # chỉ dùng cho mô hình đời cũ
+# Thinking của claude-opus-5-5 luôn bật, không tắt được; effort là núm điều khiển duy nhất.
+# Bỏ trống thì mô hình chạy ở mức mặc định 'medium'. Chốt 'high' vì khâu ② cần suy luận.
+effort: high                # low | medium | high | xhigh | max
+# Thinking ở effort high tiêu token trong CHÍNH max_tokens, và lô bị cắt giữa chừng bị tính là lô hỏng
+# (giao thức 29/9 §5) — mục tiêu là không để xảy ra, nên để rộng hẳn: đầu ra JSON của một lô 8 đoạn chỉ
+# cỡ 1–2 nghìn token, phần còn lại là biên cho thinking. Trần của mô hình là 128000.
+max_output_tokens: 32000
+# max_tokens rộng thì một lô có thể sinh lâu; 180s mặc định của adapter là không đủ.
+request_timeout_giay: 600
+batch_size: 8               # số đoạn gửi trong một lần gọi
+prompt_file: prompts/khau2_ttp_v1.md

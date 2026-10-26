@@ -1,0 +1,8 @@
+WinEventLog:Application: application
+WinEventLog:PowerShell:
+- '4103-4106: microsoft-windows-powershell/operational'
+- '400,403,600,800: windows powershell'
+WinEventLog:Security: security
+WinEventLog:Sysmon: microsoft-windows-sysmon/operational
+WinEventLog:System: system
+WinEventLog:WMI: microsoft-windows-wmi-activity/operational

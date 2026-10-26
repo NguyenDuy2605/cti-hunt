@@ -1,0 +1,5 @@
+# đã chốt: docs/METHODOLOGY.md.
+policy: duyet_loc_khau5_v2
+sample_limit: 5
+scope: hunt_run_revision
+require_complete_batch: true

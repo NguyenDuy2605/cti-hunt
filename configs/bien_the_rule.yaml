@@ -1,0 +1,48 @@
+# Biến thể mức kỹ thuật cho rule khâu ⑤ (bien_the_ky_thuat_v1).
+#
+# Rule ⑤ bám câu nguồn nên mang cả "vết cơ chế" của kỹ thuật (dấu vết hệ điều hành để lại mỗi khi kỹ thuật được dùng)
+# lẫn "phần tải" mà kẻ tấn công trong report tự chọn (rundll32 kèm một DLL, nội dung script, tên tệp). Biến thể giữ vết cơ
+# chế và nới phần tải, để người duyệt chọn giữa rule hẹp (ít báo nhầm, bám thủ tục) và rule mức kỹ thuật (bắt biến thể khác).
+# Danh sách dưới đây lấy từ mô tả phát hiện công khai của ATT&CK và quy ước PowerShell, không lấy từ bộ log nào.
+version: bien_the_ky_thuat_v1
+
+# Tiến trình cha mà hệ điều hành dựng lên khi kỹ thuật được dùng (cha của phần tải). Khóa: tên tệp chữ thường.
+tien_trinh_cha_co_che:
+  wmiprvse.exe: [T1047]                 # WMI: Win32_Process Create chạy dưới WmiPrvSE
+  wsmprovhost.exe: [T1021.006]          # WinRM / PowerShell Remoting: lệnh từ xa chạy dưới wsmprovhost
+  services.exe: [T1569.002, T1543.003]  # dịch vụ mới (PsExec và tương tự): Service Control Manager khởi chạy
+  mmc.exe: [T1021.003]                  # DCOM MMC20.Application
+  scrcons.exe: [T1546.003]              # consumer ActiveScript của WMI event subscription
+  taskeng.exe: [T1053.005]              # scheduled task (Windows cũ)
+
+# Phần tải hay gặp: trình thông dịch và chương trình có sẵn của Windows dùng để chạy mã (LOLBin).
+tien_trinh_con:
+  - powershell.exe
+  - pwsh.exe
+  - cmd.exe
+  - rundll32.exe
+  - regsvr32.exe
+  - mshta.exe
+  - wscript.exe
+  - cscript.exe
+  - msiexec.exe
+  - certutil.exe
+  - bitsadmin.exe
+  - msbuild.exe
+  - installutil.exe
+  - regasm.exe
+  - regsvcs.exe
+
+# Trường mô tả loại sự kiện WMI subscription (giữ ở biến thể); mọi điều kiện nội dung (Query, Destination, Consumer,
+# Filter, Name) là phần tải và bị bỏ.
+truong_loai_wmi: [EventType, Operation, Type]
+
+# Động từ được phép của PowerShell (Get-Verb): giá trị dạng Động-từ-Danh-từ trong nội dung script là tên cmdlet, coi là vết
+# cơ chế; chuỗi khác (đường dẫn, tên tệp, đối số) là phần tải.
+dong_tu_powershell: [Add, Approve, Assert, Backup, Block, Build, Checkpoint, Clear, Close, Compare, Complete, Compress,
+  Confirm, Connect, Convert, ConvertFrom, ConvertTo, Copy, Debug, Deny, Deploy, Disable, Disconnect, Dismount, Edit, Enable,
+  Enter, Exit, Expand, Export, Find, Format, Get, Grant, Group, Hide, Import, Initialize, Install, Invoke, Join, Limit, Lock,
+  Measure, Merge, Mount, Move, New, Open, Optimize, Out, Ping, Pop, Protect, Publish, Push, Read, Receive, Redo, Register,
+  Remove, Rename, Repair, Request, Reset, Resize, Resolve, Restart, Restore, Resume, Revoke, Save, Search, Select, Send, Set,
+  Show, Skip, Split, Start, Step, Stop, Submit, Suspend, Switch, Sync, Test, Trace, Unblock, Undo, Uninstall, Unlock,
+  Unprotect, Unpublish, Unregister, Update, Use, Wait, Watch, Write]

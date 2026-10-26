@@ -1,0 +1,32 @@
+{
+  "report_id": "DEV-SCHTASKS",
+  "title": "Empire Elevated Scheduled Tasks (SDWIN-200921175806) — Contract A phát triển tự soạn",
+  "published_date": "2020/09/21",
+  "source_url": "https://raw.githubusercontent.com/OTRF/Security-Datasets/d9d40ef123d2c87d5d3df28c96bcab4f0faccc87/datasets/atomic/_metadata/SDWIN-200921175806.yaml",
+  "actors": [],
+  "iocs": [],
+  "ttps": [
+    {
+      "tactic": "Persistence",
+      "technique_id": "T1053.005",
+      "technique_name": "Scheduled Task",
+      "behavior_description": "Tạo và/hoặc thực thi tác vụ lập lịch cục bộ để duy trì hiện diện",
+      "context": {
+        "tool": "Scheduled Tasks",
+        "execution_path": "local",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "User",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description",
+        "page": 0,
+        "text": "This dataset represents adversaries creating and/or executing local scheduled tasks to maintain persistence in an environment.",
+        "segment_id": "DEV-SCHTASKS-001"
+      },
+      "confidence": 0.9
+    }
+  ]
+}

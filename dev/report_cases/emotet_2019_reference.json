@@ -1,0 +1,175 @@
+{
+  "schema_version": "report_reference_draft_v1",
+  "report_id": "DEV-EMOTET-2019",
+  "source_url": "https://cert.europa.eu/publications/security-advisories/2019-021/",
+  "source_sha256": "962f1f92716e3db0cebeb847f4a85be1778b9d79c19a4b85e77ebda7defa1168",
+  "segments_sha256": "7fe2ccfc864f90196b1e099ae4e31a81c626493f1d4eaf4daa875d574913727b",
+  "status": "assistant_draft_before_predictions; human_expert_review_pending; not_gold; not_exhaustive",
+  "author_type": "AI assistant",
+  "purpose": "Development integration case chosen for short HTML and Windows process behavior; not random sampling or held-out accuracy evaluation.",
+  "checks": [
+    {
+      "check_id": "B01",
+      "description": "Phishing dẫn tới tài liệu Office; không tự khẳng định cả đính kèm và liên kết đều được quan sát trong cùng ca.",
+      "segment_ids": [
+        "DEV-EMOTET-2019-0017",
+        "DEV-EMOTET-2019-0019",
+        "DEV-EMOTET-2019-0027"
+      ],
+      "technique_ids": [
+        "T1566",
+        "T1566.001",
+        "T1566.002"
+      ]
+    },
+    {
+      "check_id": "B02",
+      "description": "Người dùng mở tài liệu/bật macro; phân biệt điều kiện kích hoạt với bằng chứng mọi nạn nhân đều đã thực hiện.",
+      "segment_ids": [
+        "DEV-EMOTET-2019-0020",
+        "DEV-EMOTET-2019-0027"
+      ],
+      "technique_ids": [
+        "T1204.002"
+      ]
+    },
+    {
+      "check_id": "B03",
+      "description": "Macro dùng WMI để khởi chạy PowerShell; bản thân WMI không chứng minh di chuyển ngang hoặc máy từ xa.",
+      "segment_ids": [
+        "DEV-EMOTET-2019-0020",
+        "DEV-EMOTET-2019-0027",
+        "DEV-EMOTET-2019-0030"
+      ],
+      "technique_ids": [
+        "T1047"
+      ]
+    },
+    {
+      "check_id": "B04",
+      "description": "PowerShell thực thi lệnh trong chuỗi lây nhiễm.",
+      "segment_ids": [
+        "DEV-EMOTET-2019-0019",
+        "DEV-EMOTET-2019-0020",
+        "DEV-EMOTET-2019-0027",
+        "DEV-EMOTET-2019-0031",
+        "DEV-EMOTET-2019-0035"
+      ],
+      "technique_ids": [
+        "T1059.001"
+      ]
+    },
+    {
+      "check_id": "B05",
+      "description": "Lệnh PowerShell được mã hóa base64/làm rối; không suy ra giải mã file tại một bước chưa được mô tả.",
+      "segment_ids": [
+        "DEV-EMOTET-2019-0020",
+        "DEV-EMOTET-2019-0027",
+        "DEV-EMOTET-2019-0031",
+        "DEV-EMOTET-2019-0035",
+        "DEV-EMOTET-2019-0049"
+      ],
+      "technique_ids": [
+        "T1027.010",
+        "T1027"
+      ]
+    },
+    {
+      "check_id": "B06",
+      "description": "Thử tải malware từ nhiều URL và dừng khi tải thành công; không khẳng định mọi URL đều tải thành công.",
+      "segment_ids": [
+        "DEV-EMOTET-2019-0020",
+        "DEV-EMOTET-2019-0035"
+      ],
+      "technique_ids": [
+        "T1105"
+      ]
+    },
+    {
+      "check_id": "B07",
+      "description": "Malware liên lạc C2 bằng HTTP POST; kiểm tra ngữ cảnh danh sách và IP trực tiếp.",
+      "segment_ids": [
+        "DEV-EMOTET-2019-0021",
+        "DEV-EMOTET-2019-0042",
+        "DEV-EMOTET-2019-0043",
+        "DEV-EMOTET-2019-0044",
+        "DEV-EMOTET-2019-0045"
+      ],
+      "technique_ids": [
+        "T1071.001"
+      ]
+    },
+    {
+      "check_id": "N01",
+      "description": "Không biến phiên bản Wscript mà CERT-EU nói chưa quan sát thành hành vi quan sát của ca này.",
+      "segment_ids": [
+        "DEV-EMOTET-2019-0019"
+      ],
+      "technique_ids": []
+    },
+    {
+      "check_id": "N02",
+      "description": "Không suy ra WMI remote execution hoặc WMI event-subscription persistence từ lời mô tả tạo tiến trình.",
+      "segment_ids": [
+        "DEV-EMOTET-2019-0020",
+        "DEV-EMOTET-2019-0027",
+        "DEV-EMOTET-2019-0030"
+      ],
+      "technique_ids": []
+    },
+    {
+      "check_id": "N03",
+      "description": "Câu truy vấn Splunk là ví dụ phòng thủ, không phải command_example mà kẻ tấn công đã chạy.",
+      "segment_ids": [
+        "DEV-EMOTET-2019-0028",
+        "DEV-EMOTET-2019-0033",
+        "DEV-EMOTET-2019-0047"
+      ],
+      "technique_ids": []
+    },
+    {
+      "check_id": "N04",
+      "description": "Công thức CyberChef là hướng dẫn phân tích của SOC, không phải thao tác của kẻ tấn công.",
+      "segment_ids": [
+        "DEV-EMOTET-2019-0036",
+        "DEV-EMOTET-2019-0037"
+      ],
+      "technique_ids": []
+    },
+    {
+      "check_id": "N05",
+      "description": "Chặn PowerShell bằng firewall là khuyến nghị phòng thủ, không phải vô hiệu hóa phòng thủ do malware.",
+      "segment_ids": [
+        "DEV-EMOTET-2019-0050"
+      ],
+      "technique_ids": []
+    },
+    {
+      "check_id": "N06",
+      "description": "Điều kiện DNS/proxy chỉ là dấu hiệu suy đoán tải được; không được nâng thành xác nhận lây nhiễm.",
+      "segment_ids": [
+        "DEV-EMOTET-2019-0038",
+        "DEV-EMOTET-2019-0039",
+        "DEV-EMOTET-2019-0040"
+      ],
+      "technique_ids": []
+    },
+    {
+      "check_id": "N07",
+      "description": "Menu, nút tải, cookie và danh sách tài liệu tham khảo không tự tạo ra TTP hoặc IOC độc hại.",
+      "segment_ids": [
+        "DEV-EMOTET-2019-0002",
+        "DEV-EMOTET-2019-0003",
+        "DEV-EMOTET-2019-0006",
+        "DEV-EMOTET-2019-0007",
+        "DEV-EMOTET-2019-0008",
+        "DEV-EMOTET-2019-0009",
+        "DEV-EMOTET-2019-0010",
+        "DEV-EMOTET-2019-0011",
+        "DEV-EMOTET-2019-0012",
+        "DEV-EMOTET-2019-0013"
+      ],
+      "technique_ids": []
+    }
+  ]
+}

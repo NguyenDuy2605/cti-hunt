@@ -1,0 +1,76 @@
+{
+  "report_id": "DEV-PSEXEC",
+  "title": "Empire Invoke PsExec (SDWIN-190518210652) — Contract A phát triển tự soạn",
+  "published_date": "2019/05/18",
+  "source_url": "https://raw.githubusercontent.com/OTRF/Security-Datasets/d9d40ef123d2c87d5d3df28c96bcab4f0faccc87/datasets/atomic/_metadata/SDWIN-190518210652.yaml",
+  "actors": [],
+  "iocs": [],
+  "ttps": [
+    {
+      "tactic": "Lateral Movement",
+      "technique_id": "T1021",
+      "technique_name": "Remote Services",
+      "behavior_description": "Tạo và khởi động dịch vụ trên máy từ xa qua các phương thức RPC trên TCP",
+      "context": {
+        "tool": "RPC (svcctl) qua TCP",
+        "execution_path": "remote",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "User",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description",
+        "page": 0,
+        "text": "This dataset represents adversaries remotely creating and starting a service via RPC methods over TCP.",
+        "segment_id": "DEV-PSEXEC-001"
+      },
+      "confidence": 0.9
+    },
+    {
+      "tactic": "Execution",
+      "technique_id": "T1569.002",
+      "technique_name": "Service Execution",
+      "behavior_description": "Khởi động dịch vụ vừa tạo trên máy từ xa để thực thi",
+      "context": {
+        "tool": "RPC (svcctl) qua TCP",
+        "execution_path": "remote",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "User",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description",
+        "page": 0,
+        "text": "This dataset represents adversaries remotely creating and starting a service via RPC methods over TCP.",
+        "segment_id": "DEV-PSEXEC-001"
+      },
+      "confidence": 0.7
+    },
+    {
+      "tactic": "Persistence",
+      "technique_id": "T1543.003",
+      "technique_name": "Windows Service",
+      "behavior_description": "Tạo dịch vụ Windows mới trên máy từ xa",
+      "context": {
+        "tool": "RPC (svcctl) qua TCP",
+        "execution_path": "remote",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "User",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description",
+        "page": 0,
+        "text": "This dataset represents adversaries remotely creating and starting a service via RPC methods over TCP.",
+        "segment_id": "DEV-PSEXEC-001"
+      },
+      "confidence": 0.7
+    }
+  ]
+}

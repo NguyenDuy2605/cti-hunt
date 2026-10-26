@@ -1,0 +1,28 @@
+{
+  "che_do": "pipeline",
+  "phien_ban": 1,
+  "nguoi_chot": "Nguyễn Hoàng Duy",
+  "thoi_diem": "2026-10-05T11:00:07",
+  "tep": {
+    "configs/llm_hunt.yaml": "0558b4b436f1f750425998359e4175aee7b13dc746838cc0cb274b190719e994",
+    "configs/telemetry_catalog_v2.yaml": "d6681193d67d47465c63ca71e85d7a49b8461169982533a720cf5802f294e34e",
+    "configs/logsource_catalog.yaml": "d3faf6adcb323b8fe08fe867a3dc756044561a975b54906687ca663603c7eb1a",
+    "prompts/khau4_gia_thuyet_v4.md": "a5e214e365ba970912ca83f70da68de5cd4da93d42321a812dd9c19a03de1778",
+    "prompts/khau4_pivot_v2.md": "ab94ead3a6d28f4330f50155f91937a86938470cf5719a6667ce7f059837d96c",
+    "prompts/khau5_sigma_v2.md": "f73c5073e4a20b67eab338e38c88a74fba8b19a37e7cb677f1a4877ec6f86617",
+    "configs/agent_v2.yaml": "63de610caa393d3f26489915e11b92056e0448d7eb88263ac25a956c9296653c",
+    "configs/chinh_sach_loc_v2.yaml": "7a9863b33b8621f1969198f5373c2a8158849aad934d90130fb526780c3b2fd1"
+  },
+  "ma_nguon": {
+    "commit": "9575ec07f4cae0418075edff2496bbe4cf17493b",
+    "src_tree": "550fa00871c7f4f4b27949432e59bf69b5aacf61"
+  },
+  "mo_hinh": {
+    "khau4_5": {
+      "model": "claude-sonnet-5",
+      "effort": "high"
+    }
+  },
+  "du_lieu_phat_trien": [],
+  "filter_policy": "duyet_loc_khau5_v2"
+}

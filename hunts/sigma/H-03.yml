@@ -1,0 +1,28 @@
+# Chép nguyên rule ở v3 §5.1 bước 5. Đây là đầu vào để kiểm chứng adapter: rule này đã có kết quả
+# đối chiếu bằng tay (30 kết quả trên Sysmon EID 1 của APT29 day 2).
+title: Suspicious Child Process Spawned by Remote Execution Host
+status: experimental
+tags:
+  - attack.lateral_movement
+  - attack.t1047
+  - attack.t1021.006
+  - attack.t1569.002
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection:
+    ParentImage|endswith:
+      - '\WmiPrvSE.exe'
+      - '\wsmprovhost.exe'
+      - '\services.exe'
+  filter_known_good:
+    Image|endswith:
+      - '\WmiApSrv.exe'
+      - '\wmiadap.exe'
+      - '\svchost.exe'
+  condition: selection and not filter_known_good
+falsepositives:
+  - Công cụ quản trị hợp lệ thực thi qua WMI
+  - Phần mềm quản lý tài sản
+level: medium

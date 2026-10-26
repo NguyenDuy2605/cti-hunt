@@ -1,0 +1,267 @@
+# Danh mục nguồn log cho khâu ③ — PHẦN CHUNG (tra bảng, không dùng mô hình ngôn ngữ).
+#
+# đã chốt (PA-1 kèm M1, M2; docs/METHODOLOGY.md): tệp này chỉ ghi điều đúng với
+# mọi bộ dữ liệu Windows — kỹ thuật -> nguồn log có thể dùng, trường khóa, trường bắt buộc, lý do partial, ghi chú
+# chung. KHÔNG ghi số sự kiện, câu có/không về một bộ dữ liệu hay dẫn chiếu báo cáo: s3_telemetry.load_catalog từ chối.
+# Phần theo bộ dữ liệu (kênh nào được thu thập, trường khóa nào không có giá trị) là hồ sơ do
+# s3_telemetry.build_profile sinh từ events của chính bộ đang chạy, ghi vào thư mục lượt (ho_so_du_lieu.json).
+#
+# status (khi mọi kênh của kỹ thuật được thu thập):
+#   huntable     nguồn log ghi trực tiếp hành vi, đủ trường để đặt điều kiện
+#   partial      chỉ thấy dấu vết gián tiếp, thiếu phía đích hoặc thiếu trường quyết định; ly_do_partial bắt buộc
+#   not_huntable danh mục không có nguồn log cho kỹ thuật — khoảng trống quan sát, không phải lỗi
+# Hồ sơ bỏ một nguồn khi kênh không có mặt trong bộ dữ liệu, hoặc khi nguồn có sự kiện mà một trường trong
+# truong_bat_buoc không có giá trị ở sự kiện nào. Mã sự kiện chưa có sự kiện nào trong kênh đã thu thập vẫn giữ (M1).
+# Kỹ thuật chỉ thành not_huntable khi mọi nguồn bị bỏ. Nguồn mới thêm xếp cuối danh sách của kỹ thuật.
+# truong_bat_buoc là tối thiểu: trường định danh đối tượng của sự kiện, thiếu thì nguồn không đặt được điều kiện
+# nào cho hành vi (vd Sysmon 1 chỉ cần Image: săn cặp ParentImage -> Image không cần CommandLine). Trường khóa
+# khác không có giá trị thì hồ sơ ghi "không có giá trị" nhưng vẫn giữ nguồn.
+#
+# ghi_chu, ly_do_partial và dòng hồ sơ ghép lại thành telemetry_note của prompt khâu ④ và ghi chú trong hunt record
+# bản vận hành. KHÔNG ghi mã bước tấn công, điều suy ra từ nhãn sự kiện hay ground truth, cũng không ghi nội dung
+# riêng của một report (docs/METHODOLOGY.md §4.2, §4.5).
+
+techniques:
+
+  # ---------- Lateral movement ----------
+  T1047:                                   # Windows Management Instrumentation
+    status: huntable
+    sources:
+      - channel: microsoft-windows-sysmon/operational
+        event_ids: [1]
+        key_fields: [ParentImage, Image, CommandLine, User, Hostname]
+        truong_bat_buoc: [Image]
+      - channel: microsoft-windows-wmi-activity/operational
+        event_ids: [5857, 5858, 5860, 5861]
+        key_fields: [Message, Hostname]
+        truong_bat_buoc: [Message]
+    ghi_chu: Lệnh chạy trong bộ nhớ không sinh Sysmon 1, cần đối chiếu thêm log PowerShell.
+
+  T1021.006:                               # Windows Remote Management
+    status: partial
+    sources:
+      - channel: microsoft-windows-sysmon/operational
+        event_ids: [1]
+        key_fields: [ParentImage, Image, CommandLine, User, Hostname]
+        truong_bat_buoc: [Image]
+      - channel: microsoft-windows-powershell/operational
+        event_ids: [4104]
+        key_fields: [ScriptBlockText, Hostname]
+        truong_bat_buoc: [ScriptBlockText]
+    ly_do_partial: Danh mục không dùng log WinRM riêng. Phía máy đích chỉ quan sát được qua tiến trình con của
+      wsmprovhost.exe; phía nguồn qua PowerShell 4104.
+
+  T1021.002:                               # SMB / Windows Admin Shares
+    status: partial
+    sources:
+      - channel: security
+        event_ids: [5140, 5145]
+        key_fields: [ShareName, RelativeTargetName, SubjectUserName, IpAddress, Hostname]
+        truong_bat_buoc: [ShareName]
+      - channel: security
+        event_ids: [4624]
+        key_fields: [TargetUserName, LogonType, IpAddress, WorkstationName, Hostname]
+        truong_bat_buoc: [TargetUserName, LogonType]
+    ly_do_partial: Thấy được truy cập share nhưng không thấy tiến trình nào đọc ghi, nên phải tương quan theo tài
+      khoản và thời gian.
+    ghi_chu: RelativeTargetName (tệp trong share) chỉ có ở 5145; 5140 chỉ ghi tên share.
+
+  T1021.001:                               # Remote Desktop Protocol
+    status: partial
+    sources:
+      - channel: microsoft-windows-terminalservices-remoteconnectionmanager/operational
+        event_ids: [1149, 261]
+        key_fields: [Message, Hostname]
+        truong_bat_buoc: [Message]
+      - channel: microsoft-windows-terminalservices-localsessionmanager/operational
+        event_ids: [21, 22]
+        key_fields: [Message, Hostname]
+        truong_bat_buoc: [Message]
+      - channel: security
+        event_ids: [4624]
+        key_fields: [TargetUserName, LogonType, IpAddress, Hostname]
+        truong_bat_buoc: [TargetUserName, LogonType]
+    ly_do_partial: Log Terminal Services chỉ có nội dung ở trường Message dạng văn bản; phía đăng nhập thấy qua 4624
+      với LogonType 10 (RemoteInteractive), không thấy thao tác trong phiên.
+
+  T1021.003:                               # Distributed Component Object Model
+    status: partial
+    sources:
+      - channel: microsoft-windows-sysmon/operational
+        event_ids: [1]
+        key_fields: [ParentImage, Image, CommandLine, User, Hostname]
+        truong_bat_buoc: [Image]
+    ly_do_partial: Chỉ suy ra từ tiến trình con của mmc.exe, dllhost.exe, excel.exe. Không có log riêng cho DCOM.
+
+  T1569.002:                               # Service Execution (PsExec)
+    status: partial
+    sources:
+      - channel: microsoft-windows-sysmon/operational
+        event_ids: [1]
+        key_fields: [ParentImage, Image, CommandLine, User, Hostname]
+        truong_bat_buoc: [Image]
+      - channel: security
+        event_ids: [4697]
+        key_fields: [ServiceName, ServiceFileName, SubjectUserName, Hostname]
+        truong_bat_buoc: [ServiceName, ServiceFileName]
+      - channel: system
+        event_ids: [7045]
+        key_fields: [ServiceName, ImagePath, ServiceType, StartType, AccountName, Hostname]
+        truong_bat_buoc: [ServiceName, ImagePath]
+    ly_do_partial: Log tạo dịch vụ (4697, 7045) chỉ ghi lúc cài dịch vụ; lần chạy dịch vụ chỉ thấy qua tiến trình con
+      của services.exe.
+    ghi_chu: 4697 cần bật kiểm toán Security System Extension; 7045 do Service Control Manager ghi vào log System.
+
+  T1550.003:                               # Pass the Ticket
+    status: partial
+    sources:
+      - channel: security
+        event_ids: [4768, 4769]
+        key_fields: [TargetUserName, ServiceName, TicketOptions, TicketEncryptionType, IpAddress, Hostname]
+        truong_bat_buoc: [TargetUserName]
+      - channel: security
+        event_ids: [4624, 4648]
+        key_fields: [TargetUserName, LogonType, IpAddress, Hostname]
+        truong_bat_buoc: [TargetUserName]
+    ly_do_partial: Không có nội dung vé, nên phát hiện dựa vào bất thường (vé không có 4768 đi trước, loại mã hóa lạ,
+      thời hạn dài) chứ không phải điều kiện trực tiếp.
+    ghi_chu: 4768 và 4769 ghi trên domain controller.
+
+  T1078:                                   # Valid Accounts
+    status: partial
+    sources:
+      - channel: security
+        event_ids: [4624, 4648, 4672]
+        key_fields: [TargetUserName, SubjectUserName, LogonType, IpAddress, Hostname]
+        truong_bat_buoc: [SubjectUserName]
+    ly_do_partial: Bản thân đăng nhập hợp lệ không phân biệt được; chỉ dùng làm lớp tương quan cho giả thuyết khác.
+
+  T1021.004:                               # Remote Services - SSH
+    status: not_huntable
+    sources: []
+    ghi_chu: Danh mục chưa có nguồn log cho phiên SSH trên Windows (OpenSSH/Operational). Ghi lại như khoảng trống
+      quan sát.
+
+  # ---------- Persistence ----------
+  T1546.003:                               # WMI Event Subscription
+    status: huntable
+    sources:
+      - channel: microsoft-windows-sysmon/operational
+        event_ids: [19, 20, 21]
+        key_fields: [Operation, User, EventNamespace, Name, Query, Type, Destination, Consumer, Filter, Hostname]
+        truong_bat_buoc: [Operation]
+      - channel: microsoft-windows-wmi-activity/operational
+        event_ids: [5861]
+        key_fields: [Message, Hostname]
+        truong_bat_buoc: [Message]
+    ghi_chu: Sysmon 19 ghi filter (EventNamespace, Query), 20 ghi consumer (Type, Destination), 21 ghi binding
+      (Consumer, Filter).
+
+  T1547.001:                               # Registry Run Keys / Startup Folder
+    status: huntable
+    sources:
+      - channel: microsoft-windows-sysmon/operational
+        event_ids: [12, 13]
+        key_fields: [TargetObject, Details, Image, User, Hostname]
+        truong_bat_buoc: [TargetObject]
+    ghi_chu: Sysmon 12/13 ghi mọi thay đổi registry được theo dõi nên nhiễu lớn, cần lớp thống kê độ hiếm để xếp
+      hạng. Details (giá trị được đặt) chỉ có ở 13.
+
+  T1053.005:                               # Scheduled Task
+    status: partial
+    sources:
+      - channel: security
+        event_ids: [4698, 4702]
+        key_fields: [TaskName, TaskContent, SubjectUserName, Hostname]
+        truong_bat_buoc: [TaskName]
+      - channel: microsoft-windows-sysmon/operational
+        event_ids: [1]
+        key_fields: [ParentImage, Image, CommandLine, User, Hostname]
+        truong_bat_buoc: [Image]
+      - channel: security
+        event_ids: [4699, 4700]
+        key_fields: [TaskName, SubjectUserName, Hostname]
+        truong_bat_buoc: [TaskName]
+    ly_do_partial: Log Security về tác vụ (4698, 4699, 4700, 4702) cần bật kiểm toán Other Object Access Events; tạo
+      tác vụ bằng API không qua schtasks.exe thì không có Sysmon 1, chỉ còn 4698.
+    ghi_chu: 4702 ghi nội dung mới của tác vụ ở TaskContentNew, không ở TaskContent.
+
+  T1543.003:                               # Create or Modify System Process - Windows Service
+    status: partial
+    sources:
+      - channel: security
+        event_ids: [4697]
+        key_fields: [ServiceName, ServiceFileName, ServiceSid, SubjectUserName, Hostname]
+        truong_bat_buoc: [ServiceName, ServiceFileName]
+      - channel: system
+        event_ids: [7045]
+        key_fields: [ServiceName, ImagePath, ServiceType, StartType, AccountName, Hostname]
+        truong_bat_buoc: [ServiceName, ImagePath]
+    ly_do_partial: Sửa dịch vụ sẵn có (sc config) không sinh 4697 hay 7045; hai log này chỉ ghi lúc cài dịch vụ mới.
+
+  T1136.001:                               # Create Account - Local Account
+    status: huntable
+    sources:
+      - channel: security
+        event_ids: [4720, 4728, 4732]
+        key_fields: [TargetUserName, SubjectUserName, MemberName, Hostname]
+        truong_bat_buoc: [TargetUserName]
+    ghi_chu: Ở 4728/4732 (thêm vào nhóm), TargetUserName là tên nhóm; tài khoản được thêm nằm ở MemberName.
+
+  T1112:                                   # Modify Registry
+    status: huntable
+    sources:
+      - channel: microsoft-windows-sysmon/operational
+        event_ids: [12, 13, 14]
+        key_fields: [TargetObject, Details, Image, User, Hostname]
+        truong_bat_buoc: [TargetObject]
+    ghi_chu: Cùng nguồn với T1547.001; phân biệt bằng khóa registry đích.
+
+  # ---------- Thực thi và vận chuyển công cụ, hay đi kèm hai nhóm trên ----------
+  T1059.001:                               # PowerShell
+    status: huntable
+    sources:
+      # 4104 và 4103 là hai logsource Sigma khác nhau (ps_script, ps_module) nên tách hai nguồn: một giả thuyết
+      # một nguồn log, và khâu ⑤ phải viết được đúng một rule cho nó.
+      - channel: microsoft-windows-powershell/operational
+        event_ids: [4104]
+        key_fields: [ScriptBlockText, Hostname]
+        truong_bat_buoc: [ScriptBlockText]
+      - channel: microsoft-windows-powershell/operational
+        event_ids: [4103]
+        key_fields: [Payload, ContextInfo, Hostname]
+        truong_bat_buoc: [Payload]
+      - channel: windows powershell
+        event_ids: [800]
+        key_fields: [Message, Hostname]
+        truong_bat_buoc: [Message]
+    ghi_chu: 4104 ghi nội dung script (script dài bị chia thành nhiều sự kiện), 4103 ghi lệnh theo module, 800 là
+      log PowerShell cổ điển.
+
+  T1218.011:                               # System Binary Proxy Execution - Rundll32
+    status: huntable
+    sources:
+      - channel: microsoft-windows-sysmon/operational
+        event_ids: [1]
+        key_fields: [ParentImage, Image, CommandLine, IntegrityLevel, User, Hostname]
+        truong_bat_buoc: [Image]
+    ghi_chu: Có trường IntegrityLevel để phân biệt mức quyền của tiến trình.
+
+  T1105:                                   # Ingress Tool Transfer
+    status: partial
+    sources:
+      # Sysmon 11 (file_event) và 3 (network_connection) là hai logsource Sigma khác nhau: tách hai nguồn.
+      - channel: microsoft-windows-sysmon/operational
+        event_ids: [11]
+        key_fields: [TargetFilename, Image, User, Hostname]
+        truong_bat_buoc: [TargetFilename]
+      - channel: microsoft-windows-sysmon/operational
+        event_ids: [3]
+        key_fields: [DestinationIp, DestinationPort, Image, User, Hostname]
+        truong_bat_buoc: [DestinationIp]
+      - channel: microsoft-windows-bits-client/operational
+        event_ids: [306]
+        key_fields: [Message, Hostname]
+        truong_bat_buoc: [Message]
+    ly_do_partial: Tải tệp và kết nối mạng nằm ở hai sự kiện riêng (Sysmon 11, Sysmon 3), phải tương quan theo tiến
+      trình và thời gian; log BITS chỉ ghi các lần tải qua BITS.

@@ -1,0 +1,31 @@
+name: cti-hunt-splunk
+services:
+  config-init:
+    image: splunk/splunk:10.0.9@sha256:0baa7404571672ef039708628bb898ba7ec8aee37082bfd9152cb91926e3fa21
+    user: root
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - "mkdir -p /target/apps/cti_hunt_dev && cp -R /config/. /target/apps/cti_hunt_dev/"
+    volumes:
+      - splunk_etc:/target
+      - ./cti_hunt_dev:/config:ro
+  splunk:
+    image: splunk/splunk:10.0.9@sha256:0baa7404571672ef039708628bb898ba7ec8aee37082bfd9152cb91926e3fa21
+    hostname: cti-hunt-splunk
+    depends_on:
+      config-init:
+        condition: service_completed_successfully
+    environment:
+      SPLUNK_START_ARGS: ${SPLUNK_START_ARGS:?Read the terms and use scripts/start_splunk.ps1 -AcceptSplunkTerms}
+      SPLUNK_GENERAL_TERMS: ${SPLUNK_GENERAL_TERMS:?Explicit acceptance required}
+      SPLUNK_PASSWORD: ${SPLUNK_PASSWORD:?Set in the process environment, never in this file}
+    ports:
+      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8089:8089"
+    volumes:
+      - splunk_etc:/opt/splunk/etc
+      - splunk_var:/opt/splunk/var
+    stop_grace_period: 60s
+volumes:
+  splunk_etc:
+  splunk_var:

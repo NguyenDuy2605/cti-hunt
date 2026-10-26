@@ -1,0 +1,45 @@
+# Bổ sung danh mục logsource CHỈ cho phép chấm hướng 2 (giao thức docs/hoan_thien/22_… §3, lựa chọn Q-C3; 19/10/2026).
+# Không thay configs/logsource_catalog.yaml của hệ thống; script chấm gộp tệp này vào bản sao của danh mục đó.
+#
+# Lý do: danh mục của hệ thống soạn cho APT29/OTRF, thiếu một số category Sysmon mà rule SigmaHQ dùng, nên các rule đó không
+# chạy được trên chính kênh Sysmon có nhãn L1 (kiểm đường ống 19/10: 38 rule thuộc các category dưới).
+#
+# Nguồn của mã sự kiện: bảng sysmon_generic_logsource_eventid_mapping trong
+# https://github.com/SigmaHQ/pySigma-pipeline-sysmon/blob/main/sigma/pipelines/sysmon/sysmon.py (đọc 19/10/2026, nhánh main).
+# Chỉ thêm category chưa có trong danh mục hệ thống; giữ đúng mã sự kiện của bảng đó, không thêm điều kiện nào khác.
+file_change:
+  - {name: sysmon_2, channel: microsoft-windows-sysmon/operational, event_ids: [2], field_map: {Computer: Hostname}, unavailable: []}
+sysmon_status:
+  - {name: sysmon_4_16, channel: microsoft-windows-sysmon/operational, event_ids: [4, 16], field_map: {Computer: Hostname}, unavailable: []}
+process_termination:
+  - {name: sysmon_5, channel: microsoft-windows-sysmon/operational, event_ids: [5], field_map: {Computer: Hostname}, unavailable: []}
+driver_load:
+  - {name: sysmon_6, channel: microsoft-windows-sysmon/operational, event_ids: [6], field_map: {Computer: Hostname}, unavailable: []}
+create_remote_thread:
+  - {name: sysmon_8, channel: microsoft-windows-sysmon/operational, event_ids: [8], field_map: {Computer: Hostname}, unavailable: []}
+raw_access_thread:
+  - {name: sysmon_9, channel: microsoft-windows-sysmon/operational, event_ids: [9], field_map: {Computer: Hostname}, unavailable: []}
+registry_add:
+  - {name: sysmon_12_add, channel: microsoft-windows-sysmon/operational, event_ids: [12], field_map: {Computer: Hostname}, unavailable: []}
+registry_delete:
+  - {name: sysmon_12_delete, channel: microsoft-windows-sysmon/operational, event_ids: [12], field_map: {Computer: Hostname}, unavailable: []}
+registry_rename:
+  - {name: sysmon_14, channel: microsoft-windows-sysmon/operational, event_ids: [14], field_map: {Computer: Hostname}, unavailable: []}
+create_stream_hash:
+  - {name: sysmon_15, channel: microsoft-windows-sysmon/operational, event_ids: [15], field_map: {Computer: Hostname}, unavailable: []}
+file_delete:
+  - {name: sysmon_23, channel: microsoft-windows-sysmon/operational, event_ids: [23], field_map: {Computer: Hostname}, unavailable: []}
+clipboard_capture:
+  - {name: sysmon_24, channel: microsoft-windows-sysmon/operational, event_ids: [24], field_map: {Computer: Hostname}, unavailable: []}
+process_tampering:
+  - {name: sysmon_25, channel: microsoft-windows-sysmon/operational, event_ids: [25], field_map: {Computer: Hostname}, unavailable: []}
+file_delete_detected:
+  - {name: sysmon_26, channel: microsoft-windows-sysmon/operational, event_ids: [26], field_map: {Computer: Hostname}, unavailable: []}
+file_block_executable:
+  - {name: sysmon_27, channel: microsoft-windows-sysmon/operational, event_ids: [27], field_map: {Computer: Hostname}, unavailable: []}
+file_block_shredding:
+  - {name: sysmon_28, channel: microsoft-windows-sysmon/operational, event_ids: [28], field_map: {Computer: Hostname}, unavailable: []}
+file_executable_detected:
+  - {name: sysmon_29, channel: microsoft-windows-sysmon/operational, event_ids: [29], field_map: {Computer: Hostname}, unavailable: []}
+sysmon_error:
+  - {name: sysmon_255, channel: microsoft-windows-sysmon/operational, event_ids: [255], field_map: {Computer: Hostname}, unavailable: []}

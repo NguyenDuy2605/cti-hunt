@@ -1,0 +1,21 @@
+# Khâu ② v2 (N3, docs/METHODOLOGY.md), đã duyệt. Cấu hình riêng: ② v1 giữ configs/llm.yaml.
+# Không để khóa API trong file này; đặt vào biến môi trường có tên ghi ở api_key_env.
+provider: anthropic
+# đã chốt: Sonnet 5 thay Opus 5.5 để giảm chi phí (lệch N3 §2.4). Cùng mô hình với ④⑤ và planner.
+# Trên tập phát triển, bản v1 làm mốc chạy đúng cấu hình mô hình này (chỉ khác prompt). Trên 3 report, v2 khác
+# v1 chính thức (Opus 5.5, 25/9) cả cách làm lẫn mô hình: báo rõ, không quy toàn bộ chênh lệch cho v2.
+model: claude-sonnet-5
+base_url: ""
+api_key_env: LLM_API_KEY
+effort: high
+max_output_tokens: 32000
+request_timeout_giay: 600
+# v2 và mọi lượt chạy tập phát triển (kể cả mốc v1 trên tập phát triển) đi qua sổ ngân sách dùng chung.
+budget_ledger: data/dev/api_budget.sqlite
+batch_size: 8                   # số đoạn report mỗi lô, như v1
+prompt_file: prompts/khau2_ttp_v2.md
+verify_prompt_file: prompts/khau2_kiem_v2.md
+ung_vien_moi_doan: 2            # đã chốt: 2 ứng viên BM25 mỗi đoạn, gộp lại (thay "cả lô, k = 15")
+ky_tu_mo_ta: 300                # mô tả rút gọn mỗi ứng viên trong prompt
+chuan_bi_dir: data/dev/n3/chuan_bi_v1   # tập phát triển và manifest kho BM25 (đã bỏ 600 câu phát triển)
+dev_batch_size: 10              # số câu procedure example mỗi lời gọi trên tập phát triển (N3 §7)

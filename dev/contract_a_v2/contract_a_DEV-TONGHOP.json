@@ -1,0 +1,208 @@
+{
+  "report_id": "DEV-TONGHOP",
+  "title": "Tổng hợp 7 mô tả OTRF — Contract A phát triển v2",
+  "published_date": "2019/03/19–2020/09/21",
+  "source_url": "https://github.com/OTRF/Security-Datasets/tree/d9d40ef123d2c87d5d3df28c96bcab4f0faccc87/datasets/atomic/_metadata",
+  "actors": [],
+  "iocs": [],
+  "ttps": [
+    {
+      "tactic": "Lateral Movement",
+      "technique_id": "T1021.003",
+      "technique_name": "Distributed Component Object Model",
+      "behavior_description": "Thực thi lệnh từ xa trên máy khác qua phương thức COM ShellWindows của DCOM",
+      "context": {
+        "tool": "DCOM ShellWindows",
+        "execution_path": "remote",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description (DEV-DCOM)",
+        "page": 0,
+        "text": "This dataset represents adversaries executing commands remotely via DCOM ShellWindows COM Method.",
+        "segment_id": "DEV-TONGHOP-001"
+      },
+      "confidence": 0.9
+    },
+    {
+      "tactic": "Lateral Movement",
+      "technique_id": "T1021.006",
+      "technique_name": "Windows Remote Management",
+      "behavior_description": "Thực thi mã độc trên máy từ xa bằng PowerShell Remoting (WinRM)",
+      "context": {
+        "tool": "PowerShell Remoting (WinRM)",
+        "execution_path": "remote",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description (DEV-PSREMOTING)",
+        "page": 0,
+        "text": "This dataset represents adversaries executing malicious code on remote hosts using PowerShell Remoting (WinRM).",
+        "segment_id": "DEV-TONGHOP-002"
+      },
+      "confidence": 0.9
+    },
+    {
+      "tactic": "Lateral Movement",
+      "technique_id": "T1047",
+      "technique_name": "Windows Management Instrumentation",
+      "behavior_description": "Thực thi mã từ xa qua WMI, dùng lớp Win32_Process và phương thức Create",
+      "context": {
+        "tool": "WMI",
+        "execution_path": "remote",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description (DEV-WMIEXEC)",
+        "page": 0,
+        "text": "This dataset represents an adversary remotely executing code via WMI. This dataset focuses on the use of the WMI Win32_Process class and method Create to execute code remotely.",
+        "segment_id": "DEV-TONGHOP-003"
+      },
+      "confidence": 0.9
+    },
+    {
+      "tactic": "Lateral Movement",
+      "technique_id": "T1021",
+      "technique_name": "Remote Services",
+      "behavior_description": "Tạo và khởi động dịch vụ trên máy từ xa qua các phương thức RPC trên TCP",
+      "context": {
+        "tool": "RPC methods over TCP",
+        "execution_path": "remote",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description (DEV-PSEXEC)",
+        "page": 0,
+        "text": "This dataset represents adversaries remotely creating and starting a service via RPC methods over TCP.",
+        "segment_id": "DEV-TONGHOP-004"
+      },
+      "confidence": 0.9
+    },
+    {
+      "tactic": "Execution",
+      "technique_id": "T1569.002",
+      "technique_name": "Service Execution",
+      "behavior_description": "Khởi động dịch vụ vừa tạo trên máy từ xa để thực thi",
+      "context": {
+        "tool": "RPC methods over TCP",
+        "execution_path": "remote",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description (DEV-PSEXEC)",
+        "page": 0,
+        "text": "This dataset represents adversaries remotely creating and starting a service via RPC methods over TCP.",
+        "segment_id": "DEV-TONGHOP-004"
+      },
+      "confidence": 0.7
+    },
+    {
+      "tactic": "Persistence",
+      "technique_id": "T1543.003",
+      "technique_name": "Windows Service",
+      "behavior_description": "Tạo dịch vụ Windows mới trên máy từ xa",
+      "context": {
+        "tool": "RPC methods over TCP",
+        "execution_path": "remote",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description (DEV-PSEXEC)",
+        "page": 0,
+        "text": "This dataset represents adversaries remotely creating and starting a service via RPC methods over TCP.",
+        "segment_id": "DEV-TONGHOP-004"
+      },
+      "confidence": 0.7
+    },
+    {
+      "tactic": "Persistence",
+      "technique_id": "T1053.005",
+      "technique_name": "Scheduled Task",
+      "behavior_description": "Tạo và/hoặc thực thi tác vụ lập lịch cục bộ để duy trì hiện diện",
+      "context": {
+        "tool": "local scheduled tasks",
+        "execution_path": "local",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description (DEV-SCHTASKS)",
+        "page": 0,
+        "text": "This dataset represents adversaries creating and/or executing local scheduled tasks to maintain persistence in an environment.",
+        "segment_id": "DEV-TONGHOP-005"
+      },
+      "confidence": 0.9
+    },
+    {
+      "tactic": "Persistence",
+      "technique_id": "T1546.003",
+      "technique_name": "Windows Management Instrumentation Event Subscription",
+      "behavior_description": "Dùng WMI event subscription cục bộ để duy trì hiện diện",
+      "context": {
+        "tool": "WMI subscriptions",
+        "execution_path": "local",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description (DEV-WMISUB)",
+        "page": 0,
+        "text": "This dataset represents adversaries leveraging WMI subscriptions locally for persistence.",
+        "segment_id": "DEV-TONGHOP-006"
+      },
+      "confidence": 0.9
+    },
+    {
+      "tactic": "Persistence",
+      "technique_id": "T1547.001",
+      "technique_name": "Registry Run Keys / Startup Folder",
+      "behavior_description": "Sửa khóa registry Run cục bộ để duy trì hiện diện, và thực thi cơ chế đó",
+      "context": {
+        "tool": "Run registry keys",
+        "execution_path": "local",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description (DEV-RUNKEYS)",
+        "page": 0,
+        "text": "This dataset represents adversaries modifying local Run registry keys (i.e. HKLM:SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run) for persistence. It also captures the execution of the persistence mechanism.",
+        "segment_id": "DEV-TONGHOP-007"
+      },
+      "confidence": 0.9
+    }
+  ]
+}

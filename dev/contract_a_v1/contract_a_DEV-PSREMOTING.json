@@ -1,0 +1,32 @@
+{
+  "report_id": "DEV-PSREMOTING",
+  "title": "Empire Invoke PSRemoting (SDWIN-190518211456) — Contract A phát triển tự soạn",
+  "published_date": "2019/05/18",
+  "source_url": "https://raw.githubusercontent.com/OTRF/Security-Datasets/d9d40ef123d2c87d5d3df28c96bcab4f0faccc87/datasets/atomic/_metadata/SDWIN-190518211456.yaml",
+  "actors": [],
+  "iocs": [],
+  "ttps": [
+    {
+      "tactic": "Lateral Movement",
+      "technique_id": "T1021.006",
+      "technique_name": "Windows Remote Management",
+      "behavior_description": "Thực thi mã độc trên máy từ xa bằng PowerShell Remoting (WinRM)",
+      "context": {
+        "tool": "PowerShell Remoting (WinRM)",
+        "execution_path": "remote",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "User",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description",
+        "page": 0,
+        "text": "This dataset represents adversaries executing malicious code on remote hosts using PowerShell Remoting (WinRM).",
+        "segment_id": "DEV-PSREMOTING-001"
+      },
+      "confidence": 0.9
+    }
+  ]
+}

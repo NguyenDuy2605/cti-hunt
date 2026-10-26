@@ -1,0 +1,149 @@
+# Ánh xạ logsource của Sigma sang nguồn log thật trong dataset (khâu ⑤–⑥, v3 §3.3 lớp adapter).
+# Khóa: category của Sigma, hoặc "service:<tên>" khi rule dùng service.
+# Mỗi nguồn log sinh ra MỘT hunt riêng, vì mẫu số FPR tính theo nguồn log (v3 §6.1).
+#   field_map   : tên trường Sigma -> tên cột trong dữ liệu
+#   unavailable : trường Sigma không tồn tại ở nguồn này; rule dùng tới thì nguồn này bị bỏ,
+#                 kèm lý do — đó là khoảng trống quan sát, không phải lỗi (v3 §4.2 khâu ③)
+# Số sự kiện ghi trong ghi_chu lấy từ data/work/event_counts.csv của dataset APT29 day 2.
+
+dns_query:
+  - name: sysmon_22
+    channel: microsoft-windows-sysmon/operational
+    event_ids: [22]
+    field_map: {Computer: Hostname}
+    unavailable: []
+
+process_creation:
+  - name: sysmon_1
+    channel: microsoft-windows-sysmon/operational
+    event_ids: [1]
+    field_map: {Computer: Hostname}
+    unavailable: []
+    ghi_chu: 581 sự kiện. Trường đầy đủ nhất cho tạo tiến trình.
+  - name: security_4688
+    channel: security
+    event_ids: [4688]
+    field_map:
+      Image: NewProcessName
+      ParentImage: ParentProcessName
+      ProcessId: NewProcessId
+      User: SubjectUserName
+      Computer: Hostname
+      IntegrityLevel: MandatoryLabel
+    unavailable: [ParentCommandLine, Hashes, OriginalFileName, CurrentDirectory, Description,
+                  Product, Company, ProcessGuid, ParentProcessGuid, LogonGuid, FileVersion]
+    ghi_chu: 556 sự kiện. Không có dòng lệnh tiến trình cha và không có hash.
+
+registry_set:
+  - name: sysmon_13
+    channel: microsoft-windows-sysmon/operational
+    event_ids: [13]
+    field_map: {Computer: Hostname}
+    unavailable: []
+    ghi_chu: 101.230 sự kiện.
+registry_event:
+  - name: sysmon_12_13_14
+    channel: microsoft-windows-sysmon/operational
+    event_ids: [12, 13, 14]
+    field_map: {Computer: Hostname}
+    unavailable: []
+
+wmi_event:
+  - name: sysmon_19_20_21
+    channel: microsoft-windows-sysmon/operational
+    event_ids: [19, 20, 21]
+    field_map: {Computer: Hostname}
+    unavailable: []
+    ghi_chu: 3 sự kiện (filter 19, consumer 20, binding 21 — mỗi loại 1).
+
+ps_script:
+  - name: powershell_4104
+    channel: microsoft-windows-powershell/operational
+    event_ids: [4104]
+    field_map: {Computer: Hostname, ScriptBlock: ScriptBlockText}
+    unavailable: [User]
+    ghi_chu: 716 sự kiện. Không có trường tài khoản; chỉ có UserID dạng SID.
+ps_module:
+  - name: powershell_4103
+    channel: microsoft-windows-powershell/operational
+    event_ids: [4103]
+    field_map: {Computer: Hostname, Payload: Payload, ContextInfo: ContextInfo}
+    unavailable: [User]
+    ghi_chu: 59.547 sự kiện.
+
+network_connection:
+  - name: sysmon_3
+    channel: microsoft-windows-sysmon/operational
+    event_ids: [3]
+    field_map: {Computer: Hostname}
+    unavailable: []
+file_event:
+  - name: sysmon_11
+    channel: microsoft-windows-sysmon/operational
+    event_ids: [11]
+    field_map: {Computer: Hostname}
+    unavailable: []
+image_load:
+  - name: sysmon_7
+    channel: microsoft-windows-sysmon/operational
+    event_ids: [7]
+    field_map: {Computer: Hostname}
+    unavailable: []
+process_access:
+  - name: sysmon_10
+    channel: microsoft-windows-sysmon/operational
+    event_ids: [10]
+    field_map: {Computer: Hostname}
+    unavailable: []
+pipe_created:
+  - name: sysmon_17_18
+    channel: microsoft-windows-sysmon/operational
+    event_ids: [17, 18]
+    field_map: {Computer: Hostname}
+    unavailable: []
+
+"service:security":
+  - name: security_all
+    channel: security
+    event_ids: []          # rỗng = mọi EventID của channel; rule phải tự lọc bằng trường EventID
+    field_map: {Computer: Hostname}
+    unavailable: []
+"service:wmi":
+  - name: wmi_activity
+    channel: microsoft-windows-wmi-activity/operational
+    event_ids: []
+    field_map: {Computer: Hostname}
+    unavailable: []
+# Ba service dưới đây có nguồn log trong configs/telemetry_catalog.yaml; tên service theo đúng rule SigmaHQ
+# (bản clone data/work/sigmahq, commit d1c1622). event_ids rỗng: khâu ⑤ thu phạm vi hunt về mã sự kiện của giả thuyết.
+"service:powershell-classic":
+  - name: powershell_classic
+    channel: windows powershell
+    event_ids: []
+    field_map: {Computer: Hostname}
+    unavailable: [HostApplication]
+"service:bits-client":
+  - name: bits_client
+    channel: microsoft-windows-bits-client/operational
+    event_ids: []
+    field_map: {Computer: Hostname}
+    unavailable: []
+"service:terminalservices-localsessionmanager":
+  - name: ts_localsessionmanager
+    channel: microsoft-windows-terminalservices-localsessionmanager/operational
+    event_ids: []
+    field_map: {Computer: Hostname}
+    unavailable: []
+# System 7045 (tạo dịch vụ) có trong danh mục ③ từ 25/9 (người vận hành chốt, PA-1). Rule SigmaHQ `service: system` lọc nhà cung
+# cấp bằng Provider_Name; dữ liệu OTRF ghi tên đó ở SourceName.
+"service:system":
+  - name: system
+    channel: system
+    event_ids: []
+    field_map: {Computer: Hostname, Provider_Name: SourceName}
+    unavailable: []
+
+# Danh mục ③ chưa có WinRM Operational. Rule dùng logsource không có ở đây -> not_huntable kèm lý do, là đầu ra có
+# giá trị.
+# TerminalServices-RemoteConnectionManager (1149, 261) có trong dữ liệu nhưng SigmaHQ không có logsource cho nó:
+# giả thuyết trên nguồn này bị khâu ⑤ báo `khong_co_logsource` ngay, không gọi mô hình.

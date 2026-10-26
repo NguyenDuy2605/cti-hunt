@@ -1,0 +1,65 @@
+# Cấu hình dữ liệu log và nhãn sự kiện. Đường dẫn tương đối tính từ thư mục gốc repo.
+# Mọi quy ước ở đây lấy từ báo cáo v3 (mục 3.4, 6.3); đổi quy ước = sửa v3 trước.
+
+raw:
+  path: data/raw/apt29_evals_day2_manual_2020-05-02035409.json
+  # SHA256 của file giải nén từ apt29_evals_day2_manual.zip (OTRF Security-Datasets, nhánh master),
+  # tính ngày 20/09/2026. Bản của bạn khác số này = không cùng dữ liệu, dừng lại kiểm tra.
+  sha256: fd4043c9ad2382f57da882476acb541332d2d19b60ad538572a8d4a070d59a89
+  expected_rows: 587286
+  # Máy của tập đánh giá (tên ngắn, hoa). E1: bộ OTRF phát triển có máy trùng danh sách này thì bị từ chối.
+  hosts: [UTICA, SCRANTON, NEWYORK, NASHUA]
+
+# E1: bộ OTRF phát triển nạp bằng `ingest-dev`, mỗi bộ một thư mục <dev_dir>/<mã bộ>/ (không lên git).
+dev_dir: data/dev
+
+# Danh mục nguồn log khâu ③: tuyến A dùng configs/telemetry_catalog.yaml (18 mục D17,
+# trùng byte configs/telemetry_baseline.yaml). Tuyến B trỏ sang configs/telemetry_catalog_v2.yaml; mốc cố định
+# và run_meta hash đúng tệp được trỏ, nên đổi con trỏ thì mốc/lượt cũ không còn khớp.
+# 02/10: hai con trỏ tách theo phiên bản (config.telemetry_catalog): v1 (tuyến A) đọc `telemetry_catalog`,
+# v2 (tuyến B) đọc `telemetry_catalog_v2`. Khóa mốc v2 không làm lệch mốc tuyến A.
+# 07/10: v2 trỏ sang danh mục v2.1 = v2 + ProcessGuid ở nguồn Sysmon có trường đó
+# (scripts/tao_danh_muc_v2_1.py), để ràng buộc "cùng tiến trình" qua được kiểm trường ở ④. Tệp v2 đã dùng API giữ
+# nguyên; mốc v2 khóa 05/10 không còn khớp, đánh giá tuyến B sau này cần mốc mới.
+telemetry_catalog: configs/telemetry_catalog.yaml
+# 09/10: v2 trỏ sang danh mục v2.2 = v2.1 + bốn sửa có căn cứ không nhãn (scripts/tao_danh_muc_v2_2.py:
+# T1546.012 thêm Sysmon 13, T1070 thêm Sysmon 12, T1012 bỏ Sysmon 13/14, ghi chú T1047 về WMI-Activity). Tệp v2.1
+# giữ nguyên; gói thử IcedID/ca neo ghim v2.1 nên runner của chúng từ chối chạy trên v2.2; mốc v2 phiên bản 3
+# (07/10) không còn khớp, đánh giá tuyến B sau này cần mốc mới.
+telemetry_catalog_v2: configs/telemetry_catalog_v2_2.yaml
+ioc_rules: configs/ioc_rules.yaml                     # tham số nhánh IOC của khâu ②
+logsource_catalog: configs/logsource_catalog.yaml   # ánh xạ logsource Sigma -> nguồn log thật (khâu ⑤–⑥)
+work_dir: data/work          # events.parquet + ingest_manifest.json + event_counts.csv
+ingest_threads: 2            # máy nhiều RAM (>= 16 GB) có thể tăng lên 4–8 cho nhanh hơn
+
+# v3 §3.4: "Mã sự kiện phải đi kèm channel" và tên channel không đồng nhất (Security/security).
+# Channel luôn được hạ chữ thường ở cột ev_channel.
+sysmon_channel: microsoft-windows-sysmon/operational
+
+# v3 §3.4, §6.3: trường thời gian thống nhất.
+time:
+  sysmon_field: UtcTime              # định dạng 2020-05-02 07:51:24.628
+  other_field: EventTime             # giờ địa phương UTC−4, độ chính xác giây
+  other_offset_hours: 4
+
+# Khóa định danh một sự kiện. RecordNumber chỉ duy nhất trong từng cặp (máy, channel), nên khóa
+# bắt buộc đủ ba cột. Đã kiểm tra 20/09: bộ ba không trùng trên cả 587.286 sự kiện, kể cả sau khi
+# hạ chữ thường channel (Security và security không có RecordNumber trùng trên cùng máy).
+event_key: [ev_host, ev_channel, ev_rec]
+
+labels_v1:
+  dir: data/labels/nhan_v1
+  manifest: README.txt               # các dòng "<sha256>  <tên file>" trong README được dùng để kiểm tra
+  events_csv: su_kien_tan_cong.csv
+  step_column: buoc
+  expected_rows: 64972
+  # Header: utc,may,channel,event_id,record_number,process_guid,image,chi_tiet,ly_do,buoc
+  # File lưu UTF-8 có BOM. Hai phía được chuẩn hóa giống nhau trước khi so:
+  #   may     'utica'        -> upper(split_part(., '.', 1)) -> 'UTICA'  (log gốc: UTICA.dmevals.local -> UTICA)
+  #   channel 'Security'     -> lower(.)                     -> 'security'
+  #   record_number          -> BIGINT
+  key_columns:
+    ev_host: may
+    ev_channel: channel
+    ev_rec: record_number
+  ground_truth_csv: ground_truth_scenario2.csv

@@ -1,0 +1,62 @@
+# H-03 — nhánh A (thủ công). Nguồn: v3 §5.1 bước 4–7.
+# Rule Sigma ở v3 §5.1 bước 5 được tách làm hai phần:
+#   selection          -> candidates  (khâu ⑤–⑥: sinh ứng viên)
+#   filter_known_good  -> filters F-01 (khâu ⑦: lọc có giải trình, đo được số bị loại và số loại nhầm)
+# SQL trên view `scope`; lower() vì Sigma so khớp không phân biệt hoa thường.
+
+id: H-03
+nhanh: A
+gia_thuyet: >
+  Có tiến trình con của nhóm tiến trình thực thi từ xa (WmiPrvSE.exe, wsmprovhost.exe, services.exe)
+  không thuộc mẫu quản trị hợp lệ đã biết, trên mọi máy Windows trong phạm vi log.
+linked_ttps: [T1047, T1021.006, T1569.002]
+
+scope:                                   # mẫu số FPR (v3 §6.1)
+  channel: microsoft-windows-sysmon/operational
+  event_ids: [1]
+  time_from: null                        # null = toàn bộ khoảng thời gian của dataset
+  time_to: null
+
+candidates: |
+  lower(ParentImage) LIKE '%\wmiprvse.exe'
+  OR lower(ParentImage) LIKE '%\wsmprovhost.exe'
+  OR lower(ParentImage) LIKE '%\services.exe'
+
+filters:
+  - id: F-01
+    mo_ta: filter_known_good trong rule v3 §5.1 — con là WmiApSrv.exe, wmiadap.exe, svchost.exe
+    where: |
+      lower(Image) LIKE '%\wmiapsrv.exe'
+      OR lower(Image) LIKE '%\wmiadap.exe'
+      OR lower(Image) LIKE '%\svchost.exe'
+    # v3 §4.3 yêu cầu mẫu theo tiến trình con gồm cả đường dẫn. Mẫu này mới khớp theo tên file,
+    # nên svchost.exe giả dạng ở thư mục khác cũng bị loại. Siết lại là quyết định của nhánh A.
+    ly_do: Tiến trình dịch vụ hệ thống do services.exe/WMI khởi chạy theo cơ chế bình thường
+    nguoi_chiu_trach_nhiem: Duy
+    het_han: het_de_tai
+
+  # F-02: các mẫu con hợp lệ còn lại sau F-01 (v3 §5.1 bước 7), áp trên 30 ứng viên sau F-01.
+  # Mẫu theo tiến trình con: đường dẫn đầy đủ + dòng lệnh + tài khoản (v3 §4.3), không theo tiến trình cha.
+  - id: F-02a
+    mo_ta: Con là C:\Windows\servicing\TrustedInstaller.exe, dòng lệnh không tham số, tài khoản NT AUTHORITY\SYSTEM
+    where: |
+      lower(Image) = 'c:\windows\servicing\trustedinstaller.exe'
+      AND lower(trim(CommandLine)) = 'c:\windows\servicing\trustedinstaller.exe'
+      AND lower(User) = 'nt authority\system'
+    ly_do: >
+      TrustedInstaller.exe — Windows Modules Installer, đúng thư mục C:\Windows\servicing, chạy SYSTEM,
+      lặp 5 lần trên 2 máy cùng dòng lệnh. Thành phần Windows hợp lệ, nền hệ thống bình thường.
+    nguoi_chiu_trach_nhiem: Duy
+    het_han: het_de_tai
+
+  - id: F-02b
+    mo_ta: Con là C:\Windows\System32\sppsvc.exe, dòng lệnh không tham số, tài khoản NT AUTHORITY\NETWORK SERVICE
+    where: |
+      lower(Image) = 'c:\windows\system32\sppsvc.exe'
+      AND lower(trim(CommandLine)) = 'c:\windows\system32\sppsvc.exe'
+      AND lower(User) = 'nt authority\network service'
+    ly_do: >
+      sppsvc.exe — Software Protection Platform (Windows), đúng System32, chạy NETWORK SERVICE,
+      lặp 6 lần trên 3 máy cùng dòng lệnh. Thành phần Windows hợp lệ.
+    nguoi_chiu_trach_nhiem: Duy
+    het_han: het_de_tai

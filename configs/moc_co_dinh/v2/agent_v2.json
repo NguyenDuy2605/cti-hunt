@@ -1,0 +1,70 @@
+{
+  "che_do": "agent",
+  "phien_ban": 2,
+  "nguoi_chot": "Nguyễn Hoàng Duy",
+  "thoi_diem": "2026-10-05T13:20:14",
+  "tep": {
+    "configs/llm_hunt.yaml": "0558b4b436f1f750425998359e4175aee7b13dc746838cc0cb274b190719e994",
+    "configs/telemetry_catalog_v2.yaml": "d6681193d67d47465c63ca71e85d7a49b8461169982533a720cf5802f294e34e",
+    "configs/logsource_catalog.yaml": "d3faf6adcb323b8fe08fe867a3dc756044561a975b54906687ca663603c7eb1a",
+    "prompts/khau4_gia_thuyet_v4.md": "a5e214e365ba970912ca83f70da68de5cd4da93d42321a812dd9c19a03de1778",
+    "prompts/khau4_pivot_v2.md": "ab94ead3a6d28f4330f50155f91937a86938470cf5719a6667ce7f059837d96c",
+    "prompts/khau5_sigma_v2.md": "f73c5073e4a20b67eab338e38c88a74fba8b19a37e7cb677f1a4877ec6f86617",
+    "configs/agent_v2.yaml": "63de610caa393d3f26489915e11b92056e0448d7eb88263ac25a956c9296653c",
+    "configs/chinh_sach_loc_v2.yaml": "7a9863b33b8621f1969198f5373c2a8158849aad934d90130fb526780c3b2fd1",
+    "configs/agent_planner.yaml": "244ee08299448ce098d9741def0632ab323fd05b80bb1357d19bfd5fed49d7e3",
+    "prompts/agent_plan_v3.md": "2af1835d3a6abe854807530d78bbb3e8473201e4b0f29fd622207b4040612a4a"
+  },
+  "ma_nguon": {
+    "commit": "7df6ea5d25d781871e33899ec5068fb2496b3ac2",
+    "src_tree": "814f04b939b2e6961e24f6c53e477b88639ace2c"
+  },
+  "mo_hinh": {
+    "khau4_5": {
+      "model": "claude-sonnet-5",
+      "effort": "high"
+    },
+    "planner": {
+      "model": "claude-sonnet-5",
+      "effort": "medium"
+    }
+  },
+  "du_lieu_phat_trien": [
+    {
+      "id": "otrf-dcom",
+      "source_sha256": "9ec1bcfffc46158565ad99a06b9a0a6bac97a152a513c32686be2084f54065c9",
+      "rows": 32706
+    },
+    {
+      "id": "otrf-psexec",
+      "source_sha256": "8f40e7fc86bbbf31ebd50b3ba537cf0f4378392ae3e74de84bee00aeb0de1fa5",
+      "rows": 4348
+    },
+    {
+      "id": "otrf-psremoting",
+      "source_sha256": "214355730c8cf903f4423c96aa7459fed7b74258e2a6766b794ba316e9d3a46e",
+      "rows": 2744
+    },
+    {
+      "id": "otrf-runkeys",
+      "source_sha256": "2965f791bcaf5e6ccfc4059985e81fd7e67ec87f17855b6c383edd1b03a19c36",
+      "rows": 40569
+    },
+    {
+      "id": "otrf-schtasks",
+      "source_sha256": "74662dc5c52f4ac2fc9dcb336bae7fb4e101217169c65adf5784b03015501d3b",
+      "rows": 59399
+    },
+    {
+      "id": "otrf-wmi-exec",
+      "source_sha256": "96f1dbd9c5b077c8951b6e1f43b7fe01a2620c649889262481f15139a1746d88",
+      "rows": 6383
+    },
+    {
+      "id": "otrf-wmi-sub",
+      "source_sha256": "a507f2edd768b592e6b3157e974fd0468965eee00407387d88356ecb8fd20fea",
+      "rows": 79896
+    }
+  ],
+  "filter_policy": "duyet_loc_khau5_v2"
+}

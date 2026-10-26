@@ -1,0 +1,32 @@
+{
+  "report_id": "DEV-WMIEXEC",
+  "title": "Empire Invoke WMI (SDWIN-200921001437) — Contract A phát triển v2",
+  "published_date": "2020/09/21",
+  "source_url": "https://raw.githubusercontent.com/OTRF/Security-Datasets/d9d40ef123d2c87d5d3df28c96bcab4f0faccc87/datasets/atomic/_metadata/SDWIN-200921001437.yaml",
+  "actors": [],
+  "iocs": [],
+  "ttps": [
+    {
+      "tactic": "Lateral Movement",
+      "technique_id": "T1047",
+      "technique_name": "Windows Management Instrumentation",
+      "behavior_description": "Thực thi mã từ xa qua WMI, dùng lớp Win32_Process và phương thức Create",
+      "context": {
+        "tool": "WMI",
+        "execution_path": "remote",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description",
+        "page": 0,
+        "text": "This dataset represents an adversary remotely executing code via WMI. This dataset focuses on the use of the WMI Win32_Process class and method Create to execute code remotely.",
+        "segment_id": "DEV-WMIEXEC-001"
+      },
+      "confidence": 0.9
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "report_id": "DEV-DCOM",
+  "title": "Empire Invoke DCOM ShellWindows (SDWIN-190518211052) — Contract A phát triển v2",
+  "published_date": "2019/05/18",
+  "source_url": "https://raw.githubusercontent.com/OTRF/Security-Datasets/d9d40ef123d2c87d5d3df28c96bcab4f0faccc87/datasets/atomic/_metadata/SDWIN-190518211052.yaml",
+  "actors": [],
+  "iocs": [],
+  "ttps": [
+    {
+      "tactic": "Lateral Movement",
+      "technique_id": "T1021.003",
+      "technique_name": "Distributed Component Object Model",
+      "behavior_description": "Thực thi lệnh từ xa trên máy khác qua phương thức COM ShellWindows của DCOM",
+      "context": {
+        "tool": "DCOM ShellWindows",
+        "execution_path": "remote",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description",
+        "page": 0,
+        "text": "This dataset represents adversaries executing commands remotely via DCOM ShellWindows COM Method.",
+        "segment_id": "DEV-DCOM-001"
+      },
+      "confidence": 0.9
+    }
+  ]
+}

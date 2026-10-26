@@ -1,0 +1,11 @@
+# Chỉ nối đầu ra khâu ② đã lưu; không dùng nhãn hoặc gọi lại mô hình.
+poshspy_20260925:
+  title: "POSHSPY — kết quả trích ngày 25/9"
+  source_title_contains: "(POSHSPY)"
+  source_title_contains: "(POSHSPY)"
+  contract: runs/khau2_20260925-161526/contract_a_PS.json
+  contract_sha256: 8f350cbd7b0089497f5dfc95359ec5e29e86f69bea434d0567eadddef24c9e0b
+  metadata: runs/khau2_20260925-161526/meta.json
+  metadata_sha256: c1b656809eb7eb1e1b61c723d9777627ea8dccec7870f2d26801326bb9438c1e
+  segments: data/reports/segments.jsonl
+  segments_sha256: 95727734230322e98e15a80b930f7680902cc3054125b9b6280948fddf204131

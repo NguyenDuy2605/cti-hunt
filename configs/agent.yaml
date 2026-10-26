@@ -1,0 +1,44 @@
+# Khâu ④–⑤ và vòng lặp pivot. D7 (chốt): các TRẦN dưới đây là GIÁ TRỊ BAN ĐẦU, cố định trước khi chạy ④→⑨ trên
+# dữ liệu có nhãn. Đổi thì ghi nhật ký kèm lý do, và lý do không được dựa trên kết quả có nhãn.
+max_hypotheses_per_round: 10     # giả thuyết mỗi lần chạy khâu ④; vượt thì cắt và đếm vào log
+max_total_independent_hypotheses: 50 # (N5) trần tổng số giả thuyết độc lập toàn lượt (origin=telemetry_mapping)
+max_rounds: 20                    # (N5) số vòng lặp tối đa của pipeline/agent
+max_pivot_depth: 2               # pivot_depth tối đa (0 = giả thuyết từ report)
+max_repair_attempts: 2           # số lần gọi mô hình để SỬA rule sai cú pháp, không tính lần sinh đầu
+prompt_khau4: prompts/khau4_gia_thuyet_v4.md
+prompt_khau4_pivot: prompts/khau4_pivot_v2.md
+prompt_khau5: prompts/khau5_sigma_v1.md
+prompt_agent_plan: prompts/agent_plan_v2.md  # D10; dùng trên fixture/OTRF phát triển theo E1
+# Hunt memory của planner (N5). đã chốt: agent tuyến A dùng kho RỖNG, cùng điều kiện với pipeline; kho cũ
+# data/reports/moi có hunt record của report đánh giá MS (Solorigate) nên không dùng cho lượt đánh giá.
+memory_root: data/dev/hunt_memory_tuyen_A
+
+# E2, đã chốt: ba lượt agent độc lập trên MỖI report đánh giá. Mỗi lượt có
+# thread/checkpoint mới; giữ nguyên report, dữ liệu, prompt/cấu hình/mã và quy tắc duyệt.
+# Báo mọi lượt kể cả thất bại, không chọn lượt tốt nhất. Chi tiết: docs/METHODOLOGY.md.
+evaluation:
+  independent_runs_per_report: 3
+
+# D12 (chốt 24/9): khâu ⑦ v1. Cửa sổ 5 giây NHÌN VỀ TRƯỚC, cùng máy+tài khoản;
+# >=2 lệnh trinh sát mới cộng điểm. Thiếu tài khoản thì không cộng tín hiệu này.
+# Entropy >=4 bit/ký tự trên chuỗi dài >=24 ký tự chỉ cộng điểm xếp hạng.
+# Không tự loại bản ghi, không đổi thứ tự pivot khâu ⑧. Phương án thay thế và
+# quy tắc đổi phiên bản: docs/METHODOLOGY.md.
+rarity:
+  recon_window_seconds: 5
+  entropy_threshold: 4.0
+
+# Khâu ⑧ (s8_triage). D7 — giá trị ban đầu; ngưỡng do mã quyết, trần cứng theo v3 §4.2 và §7.
+triage:
+  min_hypotheses: 2              # thực thể khớp từ 2 giả thuyết trở lên mới thành ứng viên pivot
+  time_window_minutes: 10        # cụm thời gian: sự kiện cùng máy cách nhau không quá cửa sổ này
+  max_pivots_per_round: 3
+  max_queries_total: 20          # tổng số truy vấn pivot trong một cuộc săn
+  exclude_accounts:              # không làm ứng viên pivot; vẫn hiện trong kết quả kèm lý do
+    - '^system$'
+    - '^local service$'
+    - '^network service$'
+    - '^anonymous logon$'
+    - '^-$'
+    - '\$$'                      # tài khoản máy (UTICA$)
+    - '^(dwm|umfd)-\d+$'

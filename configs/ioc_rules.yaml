@@ -1,0 +1,41 @@
+# Tham số cho khâu ② nhánh IOC. Danh sách ở đây là để sửa, không phải cố định.
+# Căn cứ: quy tắc R10 của file gán nhãn và v3 §4.2 (regex + kiểm tra định dạng).
+
+defang:            # dạng defang -> dạng thật; so khớp không phân biệt hoa thường
+  "[.]": "."
+  "(.)": "."
+  "(://)": "://"        # 14/10: Symantec viết https(://)abc(.)com
+  "{.}": "."
+  "[dot]": "."
+  "[:]": ":"
+  "[://]": "://"
+  "[@]": "@"
+  "[at]": "@"
+  "hxxps": "https"
+  "hxxp": "http"
+
+# TLD chấp nhận cho domain. Chuỗi có dạng domain nhưng TLD lạ chỉ được nhận khi trong văn bản
+# nó ở dạng defang (defang là dấu hiệu rõ ràng của chỉ dấu).
+tld:            # đóng nháy vì YAML đọc no/on/yes là boolean
+  ["com", "net", "org", "info", "biz", "io", "co", "cc", "tv", "me", "ru", "su", "cn", "jp", "kr", "in", "br", "uk", "de", "fr", "it", "es", "nl", "pl", "se", "no", "fi", "dk", "ch", "at", "be", "cz", "ro", "ua", "tr", "gr", "pt", "hu", "bg", "il", "sa", "ae", "au", "nz", "ca", "us", "eu", "vn", "sg", "hk", "tw", "th", "id", "my", "ph", "xyz", "top", "online", "site", "club", "live", "cloud", "app", "dev", "pw", "icu", "cyou"]
+
+# Đuôi tệp: chuỗi dạng "abc.xyz" với đuôi này là tên tệp, không phải domain (vd kxwn.lock, m.exe).
+# Đuôi nào có mặt ở cả hai danh sách (vd com, pl) sẽ được hiểu là TLD; loader tự loại khỏi đây.
+file_ext:
+  [exe, dll, ps1, psm1, psd1, vbs, vbe, js, jse, wsf, hta, bat, cmd, scr, com, cpl, ocx, sys, msi,
+   msp, jar, class, py, pl, sh, zip, rar, 7z, gz, tar, cab, iso, img, dat, bin, tmp, temp, log, lock,
+   txt, rtf, doc, docx, xls, xlsx, ppt, pptx, pdf, csv, xml, json, yml, yaml, ini, conf, cfg, reg,
+   lnk, url, pf, evtx, etl, db, sqlite, png, jpg, jpeg, gif, bmp, ico, svg, html, htm, php, asp, aspx]
+
+# R10: không ghi tên binary hệ thống ở đúng tên và vị trí mặc định.
+system_binaries:
+  [rundll32.exe, powershell.exe, powershell_ise.exe, cmd.exe, wmic.exe, wscript.exe, cscript.exe,
+   mshta.exe, regsvr32.exe, certutil.exe, bitsadmin.exe, schtasks.exe, sc.exe, net.exe, net1.exe,
+   nltest.exe, whoami.exe, tasklist.exe, reg.exe, at.exe, msiexec.exe, installutil.exe, svchost.exe,
+   services.exe, lsass.exe, explorer.exe, winlogon.exe, csrss.exe, wininit.exe, smss.exe, spoolsv.exe,
+   taskhostw.exe, dllhost.exe, conhost.exe, wmiprvse.exe, wsmprovhost.exe, ntdsutil.exe, vssadmin.exe,
+   makecab.exe, expand.exe, esentutl.exe, odbcconf.exe, control.exe, msbuild.exe, mavinject.exe]
+
+# Thư mục hệ thống: binary hệ thống nằm ở đây là vị trí mặc định -> bỏ qua cả đường dẫn.
+system_dirs:
+  [c:\windows\system32, c:\windows\syswow64, c:\windows, c:\program files, c:\program files (x86)]

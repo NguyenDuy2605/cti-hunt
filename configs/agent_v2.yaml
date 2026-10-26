@@ -1,0 +1,66 @@
+# Khâu ④–⑤ và vòng lặp pivot. D7 (chốt): các TRẦN dưới đây là GIÁ TRỊ BAN ĐẦU, cố định trước khi chạy ④→⑨ trên
+# dữ liệu có nhãn. Đổi thì ghi nhật ký kèm lý do, và lý do không được dựa trên kết quả có nhãn.
+max_hypotheses_per_round: 10     # giả thuyết mỗi lần chạy khâu ④; vượt thì cắt và đếm vào log
+max_total_independent_hypotheses: 50 # (N5) trần tổng số giả thuyết độc lập toàn lượt (origin=telemetry_mapping)
+max_rounds: 20                    # (N5) số vòng lặp tối đa của pipeline/agent
+max_pivot_depth: 2               # pivot_depth tối đa (0 = giả thuyết từ report)
+max_repair_attempts: 2           # số lần gọi mô hình để SỬA rule sai cú pháp, không tính lần sinh đầu
+# đã duyệt (đề xuất chặn sửa vô ích): lỗi thiếu trường trên nguồn log không có sự kiện nào thì không gọi sửa.
+dung_sua_khi_nguon_rong: true
+sinh_rang_buoc: true              # lược đồ v2; 06/10: prompt ④ v6, kiểm ngoại tuyến
+prompt_khau4: prompts/khau4_gia_thuyet_v6.md
+prompt_khau4_pivot: prompts/khau4_pivot_v4.md
+prompt_khau5: prompts/khau5_sigma_v6.md  # 12/10 (H6): v5 + cờ khởi chạy mã hóa không đặt lên trường nội dung script; chỉ kiểm mock
+prompt_agent_plan: prompts/agent_plan_v4.md  # 06/10: ngân sách do mã quyết; không gửi số tiền cho planner
+# Hunt memory của planner (N5). đã chốt: agent tuyến A dùng kho RỖNG, cùng điều kiện với pipeline; kho cũ
+# data/reports/moi có hunt record của report đánh giá MS (Solorigate) nên không dùng cho lượt đánh giá.
+memory_root: data/dev/hunt_memory_tuyen_A
+
+# E2, đã chốt: ba lượt agent độc lập trên MỖI report đánh giá. Mỗi lượt có
+# thread/checkpoint mới; giữ nguyên report, dữ liệu, prompt/cấu hình/mã và quy tắc duyệt.
+# Báo mọi lượt kể cả thất bại, không chọn lượt tốt nhất. Chi tiết: docs/METHODOLOGY.md.
+evaluation:
+  independent_runs_per_report: 3
+
+# D12 (chốt 24/9): khâu ⑦ v1. Cửa sổ 5 giây NHÌN VỀ TRƯỚC, cùng máy+tài khoản;
+# >=2 lệnh trinh sát mới cộng điểm. Thiếu tài khoản thì không cộng tín hiệu này.
+# Entropy >=4 bit/ký tự trên chuỗi dài >=24 ký tự chỉ cộng điểm xếp hạng.
+# Không tự loại bản ghi, không đổi thứ tự pivot khâu ⑧. Phương án thay thế và
+# quy tắc đổi phiên bản: docs/METHODOLOGY.md.
+rarity:
+  recon_window_seconds: 5
+  entropy_threshold: 4.0
+
+# Khâu ⑧ (s8_triage). D7 — giá trị ban đầu; ngưỡng do mã quyết, trần cứng theo v3 §4.2 và §7.
+triage:
+  min_hypotheses: 2              # thực thể khớp từ 2 giả thuyết trở lên mới thành ứng viên pivot
+  time_window_minutes: 10        # cụm thời gian: sự kiện cùng máy cách nhau không quá cửa sổ này
+  max_pivots_per_round: 3
+  max_queries_total: 20          # tổng số truy vấn pivot trong một cuộc săn
+  exclude_accounts:              # không làm ứng viên pivot; vẫn hiện trong kết quả kèm lý do
+    - '^system$'
+    - '^local service$'
+    - '^network service$'
+    - '^anonymous logon$'
+    - '^-$'
+    - '\$$'                      # tài khoản máy (UTICA$)
+    - '^(dwm|umfd)-\d+$'
+
+# Reviewed exclusions v2; original agent.yaml stays pinned for v1.
+filter_policy: configs/chinh_sach_loc_v2.yaml
+# 09/10: rule có giá trị/regex ở khối ứng viên mà giả thuyết đã duyệt không chứa (đối chiếu B3) phải được
+# người duyệt giữ hoặc bỏ tại cổng lọc trước khi chạy; rule bị bỏ ghi là chưa thực thi. Lượt cũ đã ghim giữ hành vi cũ.
+duyet_rule_doi_chieu: true
+# 15/10: rule giữ từ ngưỡng trở lên của một nguồn log khối lượng lớn (configs/do_rong_rule.yaml) cũng phải
+# được người duyệt giữ (kèm lý do) hoặc bỏ ở cổng rule; số đếm không nhãn, không gửi cho mô hình.
+duyet_rule_do_rong: true
+# 15/10 (người vận hành chọn công cụ lai): TTP chưa có rule SigmaHQ mức high/critical dùng được trên log được cộng điểm để săn
+# trước; hunt record ghi TTP nào bật rule cộng đồng. Chỉ metadata rule (data/work/sigmahq), không nhãn, không API.
+khoang_trong_rule_cong_dong: true
+# 15/10 (công cụ lai): mỗi lượt chạy rule SigmaHQ mức high/critical có tag trùng TTP của report, ghi kết quả vào
+# hunt record và record JSON. Không nhãn, không API.
+rule_cong_dong_trong_luot: true
+# Chế độ chỉ săn khoảng trống: TTP đã có rule cộng đồng mức cao không đưa vào ④ (rule cộng đồng lo phần đó).
+# Đo có nhãn trên APT29 (phân tích lại, 15/10): hunt phải duyệt 26 → 2, không mất bước so với rule cộng đồng,
+# mất bước 16.B mà hunt tự sinh bắt thêm. Mặc định tắt; bật khi cần giảm tải duyệt.
+chi_san_khoang_trong: false

@@ -1,0 +1,40 @@
+# BẢN THAM CHIẾU — H-03 chỉ có selection + F-01 (trạng thái trước F-02), để chạy exec-acc so với
+# hunts/sigma/H-03.yml ở cả hai giai đoạn (kỳ vọng ung_vien 152/152/152, cuoi 30/30/30, Jaccard 1.000).
+# Không chạy `hunt` trên file này. Nhánh A chính thức: hunts/manual/H-03.yaml.
+#
+# H-03 — nhánh A (thủ công). Nguồn: v3 §5.1 bước 4–7.
+# Rule Sigma ở v3 §5.1 bước 5 được tách làm hai phần:
+#   selection          -> candidates  (khâu ⑤–⑥: sinh ứng viên)
+#   filter_known_good  -> filters F-01 (khâu ⑦: lọc có giải trình, đo được số bị loại và số loại nhầm)
+# SQL trên view `scope`; lower() vì Sigma so khớp không phân biệt hoa thường.
+
+id: H-03
+nhanh: A
+gia_thuyet: >
+  Có tiến trình con của nhóm tiến trình thực thi từ xa (WmiPrvSE.exe, wsmprovhost.exe, services.exe)
+  không thuộc mẫu quản trị hợp lệ đã biết, trên mọi máy Windows trong phạm vi log.
+linked_ttps: [T1047, T1021.006, T1569.002]
+
+scope:                                   # mẫu số FPR (v3 §6.1)
+  channel: microsoft-windows-sysmon/operational
+  event_ids: [1]
+  time_from: null                        # null = toàn bộ khoảng thời gian của dataset
+  time_to: null
+
+candidates: |
+  lower(ParentImage) LIKE '%\wmiprvse.exe'
+  OR lower(ParentImage) LIKE '%\wsmprovhost.exe'
+  OR lower(ParentImage) LIKE '%\services.exe'
+
+filters:
+  - id: F-01
+    mo_ta: filter_known_good trong rule v3 §5.1 — con là WmiApSrv.exe, wmiadap.exe, svchost.exe
+    where: |
+      lower(Image) LIKE '%\wmiapsrv.exe'
+      OR lower(Image) LIKE '%\wmiadap.exe'
+      OR lower(Image) LIKE '%\svchost.exe'
+    # v3 §4.3 yêu cầu mẫu theo tiến trình con gồm cả đường dẫn. Mẫu này mới khớp theo tên file,
+    # nên svchost.exe giả dạng ở thư mục khác cũng bị loại. Siết lại là quyết định của nhánh A.
+    ly_do: Tiến trình dịch vụ hệ thống do services.exe/WMI khởi chạy theo cơ chế bình thường
+    nguoi_chiu_trach_nhiem: Duy
+    het_han: het_de_tai

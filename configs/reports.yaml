@@ -1,0 +1,38 @@
+# Report đầu vào và nhãn report. v3 §3.5 (chọn report), §6.2 (đo khâu ②).
+
+eval_reports:                  # mã = tiền tố của ma_doan trong sheet DoanVan
+  SY: {title: "Symantec — Raindrop (01/2021)", doc_lap_voi_kich_ban: true}
+  PS: {title: "Mandiant — POSHSPY (04/2017)", doc_lap_voi_kich_ban: false}
+  MS: {title: "Microsoft — Solorigate second-stage activation (01/2021)", doc_lap_voi_kich_ban: true}
+# Blackpoint (đầu vào phụ) chưa có trong file gán nhãn; thêm khi tách đoạn xong.
+
+# File gán nhãn tay đang làm dở (trước khi đổi sang silver). Chỉ dùng khi chưa có bản đóng băng, hoặc
+# khi làm bản gold sau này. Lệnh segments / check-labels ưu tiên bản đóng băng nếu có.
+labels_xlsx_working: data/reports/gan_nhan_report.xlsx
+
+# BỘ NHÃN THAM CHIẾU ĐÃ ĐÓNG BĂNG. Khâu ②, IOC --eval-set và khâu ④ trên report đánh giá CHỈ chạy khi thư mục
+# này có MANIFEST.sha256 khớp VÀ file bên trong đúng SHA256 dưới đây. Xem cli._labels_gate.
+#
+# 21/09/2026 — người vận hành đổi phương pháp: bộ tham chiếu là SILVER LABEL V1
+#   toàn bộ do GPT-5 sinh (ChatGPT/Codex, qua web), theo quy trình ghi là TRAM pre-annotation -> rà R1–R14
+#   -> chuẩn hóa ATT&CK v19.2; TRAM chưa từng được cài nên chưa xác minh có thực chạy.
+# KHÔNG phải nhãn tay, không phải gold, không phải ground truth chuyên gia — không gọi như vậy ở bất kỳ đâu.
+# Lệch v3 (§6.2, §6.4, §8.3) và R11; xem ban_giao_silver_v1.md.
+# Hệ quả khi đo (ghi vào báo cáo):
+#   - IOC tham chiếu = đầu ra regex R10 của chính repo (167/167 trùng) -> không đo được nhánh IOC trên bộ này.
+#   - 15/39 cặp (report, kỹ thuật) có mã xuất hiện nguyên văn trong văn bản report (D6), tất cả ở MS.
+#   - Bộ tham chiếu do GPT-5 sinh: nguy cơ vòng tròn -> mô hình khâu ② phải khác họ OpenAI.
+# Không sửa đè. Sửa nhãn thì tạo thư mục mới (silver_v2 / gold_v1) và đổi ba dòng dưới.
+labels_kind: silver                            # silver | gold — in ra ở verify và ghi vào meta mỗi lần chạy
+labels_frozen_dir: data/labels/silver_v1
+labels_frozen_xlsx: gan_nhan_report_silver_v1.xlsx   # tên file bên trong labels_frozen_dir
+labels_frozen_sha256: 060f24a756d656e0e2d262381aa77c3fbbc7e00eb0e28e2e84bda5b3f6ee5c73
+
+# Đầu vào khâu ② = đúng các đoạn trong sheet DoanVan (lệnh `segments` xuất ra đây).
+segments_jsonl: data/reports/segments.jsonl
+
+attack:
+  version: "19.2"              # cố định đến hết đề tài (quy tắc R14)
+  stix_path: data/attack/enterprise-attack-19.2.json
+  # SHA256 của enterprise-attack-19.2.json tải từ github.com/mitre-attack/attack-stix-data ngày 20/09/2026.
+  stix_sha256: dc1639caa5501d720e280cf1cbd8fbe009884a0c9b3e6e9ed9d0c25166c3d8f4

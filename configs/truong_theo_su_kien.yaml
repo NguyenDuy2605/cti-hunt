@@ -1,0 +1,70 @@
+﻿microsoft-windows-sysmon/operational:
+  1:
+    key_fields: [Image, ParentImage, CommandLine]
+    truong_bat_buoc: [Image]
+  3:
+    key_fields: [Image, DestinationIp, DestinationPort]
+    truong_bat_buoc: [Image]
+  7:
+    key_fields: [Image, ImageLoaded]
+    truong_bat_buoc: [Image]
+  10:
+    key_fields: [SourceImage, TargetImage]
+    truong_bat_buoc: [SourceImage]
+  11:
+    key_fields: [Image, TargetFilename]
+    truong_bat_buoc: [Image]
+  12:
+    key_fields: [Image, TargetObject]
+    truong_bat_buoc: [Image]
+  13:
+    key_fields: [Image, TargetObject]
+    truong_bat_buoc: [Image]
+  14:
+    key_fields: [Image, TargetObject]
+    truong_bat_buoc: [Image]
+  19:
+    key_fields: [Name, EventNamespace, Query]
+    truong_bat_buoc: [Name]
+  20:
+    key_fields: [Name, Destination]
+    truong_bat_buoc: [Name]
+  21:
+    key_fields: [Consumer, Filter]
+    truong_bat_buoc: [Consumer, Filter]
+  22:
+    key_fields: [Image, QueryName]
+    truong_bat_buoc: [Image]
+security:
+  4688:
+    key_fields: [NewProcessName, ParentProcessName, CommandLine]
+    truong_bat_buoc: [NewProcessName]
+  4624:
+    key_fields: [TargetUserName, LogonType, IpAddress]
+    truong_bat_buoc: [TargetUserName]
+  4697:
+    key_fields: [ServiceName, ServiceFileName]
+    truong_bat_buoc: [ServiceName]
+  4698:
+    key_fields: [TaskName, TaskContent]
+    truong_bat_buoc: [TaskName]
+  4720:
+    key_fields: [TargetUserName]
+    truong_bat_buoc: [TargetUserName]
+system:
+  7045:
+    key_fields: [ServiceName, ImagePath]
+    truong_bat_buoc: [ServiceName]
+microsoft-windows-powershell/operational:
+  4103:
+    key_fields: [Payload]
+    truong_bat_buoc: [Payload]
+  4104:
+    key_fields: [ScriptBlockText]
+    truong_bat_buoc: [ScriptBlockText]
+windows powershell:
+  # OTRF has no parsed HostApplication column; the dataset profile must report
+  # this collection gap. Do not substitute Message for this semantic field.
+  400:
+    key_fields: [HostApplication]
+    truong_bat_buoc: [HostApplication]

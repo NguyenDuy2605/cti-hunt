@@ -1,0 +1,13 @@
+# 26/09/2026, người vận hành đồng ý đổi model để giảm chi phí; xem docs/METHODOLOGY.md.
+# Dùng chung cho ④, ④ pivot và ⑤, ở CLI rời và cả hai chế độ graph.
+# Khâu ② v1 giữ cấu hình Opus trong llm.yaml; không sửa/chạy lại kết quả chính thức.
+provider: anthropic
+model: claude-sonnet-5
+base_url: ""
+api_key_env: LLM_API_KEY
+# Giữ effort/trần/timeout cũ của ④⑤; chưa hạ trần khi chưa đo thinking thực tế.
+effort: high
+max_output_tokens: 32000
+request_timeout_giay: 600
+# Sổ dùng chung với planner. người vận hành đặt hạn mức bằng api-budget init; không có sổ thì không gọi API.
+budget_ledger: data/dev/api_budget.sqlite

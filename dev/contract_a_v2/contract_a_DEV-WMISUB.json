@@ -1,0 +1,32 @@
+{
+  "report_id": "DEV-WMISUB",
+  "title": "Empire Elevated WMI Eventing (SDWIN-190518184306) — Contract A phát triển v2",
+  "published_date": "2019/05/18",
+  "source_url": "https://raw.githubusercontent.com/OTRF/Security-Datasets/d9d40ef123d2c87d5d3df28c96bcab4f0faccc87/datasets/atomic/_metadata/SDWIN-190518184306.yaml",
+  "actors": [],
+  "iocs": [],
+  "ttps": [
+    {
+      "tactic": "Persistence",
+      "technique_id": "T1546.003",
+      "technique_name": "Windows Management Instrumentation Event Subscription",
+      "behavior_description": "Dùng WMI event subscription cục bộ để duy trì hiện diện",
+      "context": {
+        "tool": "WMI subscriptions",
+        "execution_path": "local",
+        "source_role": "",
+        "target_role": "",
+        "account_type": "",
+        "preceded_by": [],
+        "command_example": ""
+      },
+      "source_span": {
+        "section": "OTRF metadata: description",
+        "page": 0,
+        "text": "This dataset represents adversaries leveraging WMI subscriptions locally for persistence.",
+        "segment_id": "DEV-WMISUB-001"
+      },
+      "confidence": 0.9
+    }
+  ]
+}

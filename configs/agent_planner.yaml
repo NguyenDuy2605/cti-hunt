@@ -1,0 +1,14 @@
+# E3 v2, đã chốt: Sonnet 5 để giảm chi phí cho agent lập kế hoạch D10.
+# Khâu ② vẫn đọc configs/llm.yaml với effort high; không dùng file này cho khâu ②.
+# Quyết định và phiên bản cũ: docs/METHODOLOGY.md.
+# Không lưu khóa API ở đây; chỉ đọc biến môi trường khi thực sự gọi API.
+provider: anthropic
+model: claude-sonnet-5
+base_url: ""
+api_key_env: LLM_API_KEY
+effort: medium
+# Trần/timeout triển khai cho JSON quyết định ngắn; kiểm trên E1 và cố định hash trước đánh giá.
+max_output_tokens: 8192
+request_timeout_giay: 180
+# Dùng chung hạn mức với ④⑤/pivot, giữ cả khi start lượt mới hoặc resume.
+budget_ledger: data/dev/api_budget.sqlite

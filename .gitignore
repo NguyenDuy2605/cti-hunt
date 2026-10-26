@@ -1,0 +1,27 @@
+# Datasets, labels and run outputs are not distributed (large; labels are pinned by SHA-256)
+data/raw/*
+data/labels/**/*
+data/attack/*
+data/reports/*
+data/work/*
+data/dev/*
+data/eval/*
+data/models/*
+runs/*
+!**/.gitkeep
+
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+tmp/
+.tmp/
+*.egg-info/
+
+# Secrets
+.env
+.env.*
+.claude/
+
+# Folder created by tools that do not expand %SystemDrive%
+%SystemDrive%/
