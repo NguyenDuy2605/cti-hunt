@@ -96,6 +96,13 @@ built by the author and checked by blind audits, not by an independent analyst. 
 reports and its rule generation on a random 25 of 55 eligible techniques. The human review gate was not independent of the
 assistant that proposed decisions. See the [report](report/cti-hunt-report.pdf) §7.
 
+## Development history
+
+Started on 19 September 2026, the day after onboarding at VinSOC, and built locally during the internship
+(18 September – 22 October 2026). Published as a single snapshot on 26 October 2026. The timeline is recorded in the
+artefacts themselves: the official extraction run (25 September), protocol hashes written before each labelled
+measurement (from 16 October), the fixed random seeds, and the cost ledger of every paid call.
+
 ## Author and license
 
 Nguyễn Hoàng Duy — internship research project at VinSOC, September–October 2026.

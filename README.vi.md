@@ -91,6 +91,13 @@ Chỉ một kịch bản nhiều bước có nhãn (4 máy, 40 phút); các bộ
 và kiểm bằng kiểm mù, chưa có chuyên viên độc lập kiểm. Claude trích TTP mới đo trên 4 report, sinh rule trên 25/55 kỹ thuật
 chọn ngẫu nhiên. Cổng người duyệt chưa độc lập với trợ lý đề xuất quyết định. Xem [báo cáo](report/cti-hunt-report.pdf) §7.
 
+## Lịch sử phát triển
+
+Bắt đầu ngày 19/09/2026, một ngày sau khi nhận việc tại VinSOC, và phát triển trên máy local trong suốt kỳ thực tập
+(18/09 – 22/10/2026). Công bố một lần dưới dạng một bản chụp ngày 26/10/2026. Mốc thời gian nằm sẵn trong các tệp của dự
+án: lần chạy chính thức khâu ② (25/09), hash của protocol viết trước mỗi phép đo có nhãn (từ 16/10), các seed ngẫu nhiên
+cố định, và sổ chi phí của mọi lời gọi trả phí.
+
 ## Tác giả và giấy phép
 
 Nguyễn Hoàng Duy — đề tài thực tập tại VinSOC, tháng 9–10/2026.
