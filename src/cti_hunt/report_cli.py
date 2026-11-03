@@ -81,7 +81,7 @@ def cmd_extract_report(a) -> int:
         result = s2_report.run(bundle, stix, config.resolve("prompts/report_extract_v1.md"), llm_cfg,
                                config.resolve(a.out), s2_ioc.load_rules(config.resolve("configs/ioc_rules.yaml")),
                                send=a.send, resume=a.resume, batch_size=a.batch_size, top_k=a.top_k,
-                               accept_partial=a.accept_partial,
+                               accept_partial=a.accept_partial, retrieval=a.retrieval,
                                segments_selected=[x.strip() for x in a.segments.split(",") if x.strip()]
                                if a.segments is not None else None)
         print(f"{result['report_id']}: {result['status']} · {result['target_units']} phần văn bản / {result['batches']} lô")
@@ -257,7 +257,33 @@ def cmd_review_report(a) -> int:
         return 1
 
 
+def cmd_api(a) -> int:
+    """API HTTP đợt 1. Token lấy từ biến môi trường, không nhận qua dòng lệnh (lịch sử shell lưu lại)."""
+    import os
+
+    import uvicorn
+
+    from .api.app import create_app
+    from .api.services import Settings
+    token = os.environ.get("CTI_API_TOKEN", "")
+    paths = {k: Path(os.environ[e]) for k, e in (("reports_root", "CTI_API_REPORTS_ROOT"), ("jobs_db", "CTI_API_JOBS_DB"))
+             if os.environ.get(e)}
+    try:
+        app = create_app(Settings(token=token, **paths))
+    except ValueError as e:
+        print(e)
+        return 2
+    if a.host not in ("127.0.0.1", "localhost", "::1"):
+        print(f"Cảnh báo: API nghe trên {a.host}, không chỉ máy này. Chỉ dùng trong container hoặc mạng đã kiểm soát.")
+    uvicorn.run(app, host=a.host, port=a.port)
+    return 0
+
+
 def register(sub) -> None:
+    p = sub.add_parser("api", help="Chạy API HTTP đợt 1 (6 cửa, không gọi LLM); token ở biến CTI_API_TOKEN")
+    p.add_argument("--host", default="127.0.0.1", help="Mặc định chỉ máy này")
+    p.add_argument("--port", type=int, default=8000)
+    p.set_defaults(fn=cmd_api)
     p = sub.add_parser("review-report", help="Tạo phiếu rà bóc chữ và TTP riêng biệt; không gọi API, không tự chấm điểm")
     p.add_argument("bundle")
     p.add_argument("--extraction", required=True, help="Thư mục extract-report preview hoặc đã chạy")
@@ -298,6 +324,8 @@ def register(sub) -> None:
     p.add_argument("--batch-size", type=int, default=4)
     p.add_argument("--top-k", type=int, default=8)
     p.add_argument("--segments", help="Chỉ trích các mã đoạn này (phân cách dấu phẩy); ghi trích một phần vào meta")
+    p.add_argument("--retrieval", choices=["bm25", "lai"], default="bm25",
+                   help="Cách gợi ý kỹ thuật: bm25 (mặc định) hoặc lai BM25 + embedding (cần nhóm cài [embed])")
     p.set_defaults(fn=cmd_extract_report)
     p = sub.add_parser("report-coverage", help="Contract A mới → độ phủ telemetry trên log, không nhãn, không gọi API")
     p.add_argument("contract_a")

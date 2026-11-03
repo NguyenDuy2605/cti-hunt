@@ -15,7 +15,7 @@ datasets with event-level labels and pre-registered protocols.
 
 | Question | Result |
 |---|---|
-| **RQ1 · Reading reports** | TTPs: Claude found **45/48** parent techniques that MITRE maps to four reports; open `qwen2.5:7b` 25/48; retrained rcATT 12/48. On a pre-registered 30-report set, the 7B model had lower recall than BM25's top suggestion (41 % vs 55 %). IOCs: a regex extractor already reaches 484/493 recall on 19 reports from 17 publishers; an LLM filter did not beat hand-written rules |
+| **RQ1 · Reading reports** | TTPs: Claude found **45/48** parent techniques that MITRE maps to four reports; open `qwen2.5:7b` 25/48; retrained rcATT 12/48. On a pre-registered 30-report set, the 7B model had lower recall than BM25's top suggestion (41 % vs 55 %). IOCs: a regex extractor already reaches 484/493 recall on 19 reports from 17 publishers; an LLM filter did not beat hand-written rules. Candidate retrieval: fusing BM25 with dense embeddings (`e5-base`, reciprocal rank fusion) put 489/559 answer-key techniques in the 8 candidates per segment vs 474/559 for BM25 (sign test over 30 reports p = 0.049); embeddings alone did not beat BM25 (463/559) |
 | **RQ2 · Writing detections** | On 25 randomly sampled techniques with labelled events (Splunk `attack_data`): Claude-written Sigma rules detected **12/25**, SigmaHQ high-level rules **10/25** (p = 0.75), with 4,439 vs 384 false positives. Hybrid: 16/25 (p = 0.03 vs SigmaHQ), the same as enabling every high-level SigmaHQ rule. `qwen2.5:7b` / `14b`: 0/25 |
 | **RQ3 · Controls** | Static checks make Claude's rules valid (46/46), but 41 of 57 valid 14B rules never match anything due to semantic errors. A new **field-shape check** caught 34/41 of them out-of-sample with 0 false flags on 61 correct rules. A **breadth gate** caught the over-broad hunt that had inflated an earlier 17/24 scenario result (4–8/24 without it) |
 
@@ -29,7 +29,7 @@ techniques, select existing community rules by the report's techniques — same 
 ```
 report (HTML/PDF/image)
   ① ingest, segment, local OCR held for review
-  ② extract   IOC: regex + strong/weak rules        TTP: LLM + BM25 candidates + verbatim-quote check
+  ② extract   IOC: regex + strong/weak rules        TTP: LLM + BM25 or hybrid candidates + verbatim-quote check
   ③ telemetry technique → log sources, profiled on the actual dataset
   ④ hypothesis (LLM)  →  ◆ human review (form bound to SHA-256)
   ⑤ Sigma rule (LLM) + static checks, field-shape check, breadth gate, repair fed static errors only
@@ -43,6 +43,17 @@ report (HTML/PDF/image)
   record are deterministic code.
 - **The hunting stages never see labels:** the query runner rejects label columns; the repair loop receives static
   errors only.
+
+## Service and deployment
+
+- **HTTP API** (`src/cti_hunt/api/`, FastAPI): six endpoints — ingest a report (file or URL), estimate extraction cost,
+  sweep the report's IOCs over a log set, run SigmaHQ rules selected by the report's techniques, look up ATT&CK techniques
+  (BM25 or hybrid), read saved hunt records. No endpoint calls an LLM. Bearer token, localhost only, public-URL check
+  against SSRF, upload limits. Details: [docs/API.md](docs/API.md).
+- **Job table:** long requests return `202` and a job id at once; one worker thread runs jobs in order and records state in
+  SQLite, so a job cut off by a restart is reported as `interrupted` instead of disappearing.
+- **Docker:** `python:3.12-slim`, non-root user, health check, data mounted from the host. Base image 416 MB; the
+  embedding variant (CPU PyTorch) 2.24 GB. Verified end to end in a container on a real report.
 
 ## Data engineering
 
@@ -61,6 +72,7 @@ report (HTML/PDF/image)
 
 ```
 src/cti_hunt/     stages/ (①–⑨), agent/ (LangGraph graph, sessions), adapters/ (Sigma → DuckDB), llm/ (providers, budget),
+                  attack/ (ATT&CK catalogue, BM25 and dense retrieval), api/ (FastAPI, job table),
                   eval/ (metrics, statistics: Wilson, exact McNemar, sign test), hunt/, labels/, cli.py
 app/              Streamlit interface, read-only MCP server for hunt records
 configs/          telemetry catalogues, caps and thresholds, breadth gate, model configs
@@ -69,7 +81,8 @@ scripts/          measurement scripts that produced every reported number, label
 eval/             pinned benchmark inputs
 tests/            1,400+ tests on synthetic fixtures (no dataset or API key needed)
 report/           report source, figures, PDF
-docs/METHODOLOGY.md
+docs/METHODOLOGY.md, docs/API.md
+Dockerfile, docker-compose.yml
 ```
 
 Code comments, configuration keys and CLI help are in Vietnamese, the project's working language.
@@ -88,6 +101,15 @@ Datasets are not redistributed. Download OTRF APT29 day 2, the OTRF technique se
 [Methodology §6](docs/METHODOLOGY.md#6-reproducing). Paid model calls need `LLM_API_KEY`; extraction runs in dry-run mode
 (prompts and cost estimate only) unless `--send` is given. The interface starts with `run_demo.bat` or
 `streamlit run app/streamlit_app.py`.
+
+HTTP API and Docker:
+
+```bash
+pip install -e ".[api,ingest,sigma]"     # add ,embed for hybrid retrieval
+export CTI_API_TOKEN="<random string, at least 16 characters>"
+python -m cti_hunt api                   # http://127.0.0.1:8000/docs
+docker compose up --build                # same API in a container
+```
 
 ## Limitations
 

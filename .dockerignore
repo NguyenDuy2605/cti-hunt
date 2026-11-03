@@ -1,0 +1,18 @@
+# The image needs code, configuration and prompts only; data is mounted at run time.
+.git
+.venv
+data
+runs
+tmp
+docs
+report
+tests
+scripts
+hunts
+dev
+eval
+app
+**/__pycache__
+**/*.pyc
+*.egg-info
+run_demo.bat

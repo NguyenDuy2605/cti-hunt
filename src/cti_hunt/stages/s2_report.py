@@ -192,7 +192,12 @@ def select_segments(segments: list[dict], provenance: dict, selected) -> list[st
 
 
 def prepare(bundle: Path, stix: Path, prompt_path: Path, llm_config: dict,
-            batch_size: int = 4, top_k: int = 8, segments_selected=None) -> tuple[dict, list[dict]]:
+            batch_size: int = 4, top_k: int = 8, segments_selected=None, retrieval: str = "bm25",
+            encoder=None) -> tuple[dict, list[dict]]:
+    """``retrieval``: ``bm25`` (mặc định, như mọi lượt cũ) hoặc ``lai`` (BM25 + embedding gộp bằng RRF, đo ở
+    `docs/METHODOLOGY.md` §2.4). ``encoder`` chỉ để test thay mô hình embedding."""
+    if retrieval not in ("bm25", "lai"):
+        raise ValueError("retrieval phải là bm25 hoặc lai")
     if not 1 <= batch_size <= 8:
         raise ValueError("batch-size phải từ 1 đến 8")
     manifest, segments, provenance = s1_ingest.load_bundle(bundle)
@@ -207,11 +212,27 @@ def prepare(bundle: Path, stix: Path, prompt_path: Path, llm_config: dict,
         raise ValueError("Report không có nội dung đọc được; cần xử lý OCR/HTML trước")
     index = TechniqueIndex.from_stix(stix)
     system = prompt_path.read_text(encoding="utf-8")
+    dense = None
+    if retrieval == "lai":
+        from ..attack import dense_retrieval as dr
+        dense = dr.DenseIndex(index.documents, encoder or dr.load_encoder(dr.LAI_MODEL), dr.LAI_MODEL, dr.LAI_CHUNK,
+                              cache_dir=dr.default_cache_dir())
+        by_id = {d["technique_id"]: d for d in index.documents}
+        dense_rank = dense.search_many([u["text"] for u in targets], dr.RRF_DEPTH)
+
+        def candidates(n: int, text: str) -> list[dict]:
+            bm = [c["technique_id"] for c in index.search(text, dr.RRF_DEPTH)]
+            fused = dr.rrf([bm, [c["technique_id"] for c in dense_rank[n]]], k=top_k)
+            return [{**by_id[c["technique_id"]], "description": by_id[c["technique_id"]]["description"][:2400],
+                     "retrieval_score": c["retrieval_score"]} for c in fused]
+    else:
+        def candidates(n: int, text: str) -> list[dict]:
+            return index.search(text, top_k)
     requests = []
     for start in range(0, len(targets), batch_size):
         batch = targets[start:start + batch_size]
         # Retrieve per target so a long unrelated paragraph cannot crowd out another.
-        enriched = [{**unit, "candidates": index.search(unit["text"], top_k)} for unit in batch]
+        enriched = [{**unit, "candidates": candidates(start + i, unit["text"])} for i, unit in enumerate(batch)]
         user = json.dumps({"report_id": manifest["report_id"], "title": manifest["title"],
                            "targets": enriched}, ensure_ascii=False, indent=2)
         requests.append({"batch": len(requests), "system": system, "user": user,
@@ -229,6 +250,14 @@ def prepare(bundle: Path, stix: Path, prompt_path: Path, llm_config: dict,
             "code_sha256": {p.name: s1_ingest.digest(p.read_bytes()) for p in code_paths},
             "target_units": len(targets), "batches": len(requests),
             "requests_sha256": s1_ingest.digest(json.dumps(requests, ensure_ascii=False, sort_keys=True).encode())}
+    if dense is not None:
+        # Chỉ ghi khi bật cách lai: lượt BM25 giữ nguyên meta, requests và fingerprint như trước.
+        meta["retrieval"] = ("Hybrid: BM25 + dense embedding fused by RRF (k=60, depth 30) over active technique "
+                             "definitions only; no procedure examples")
+        meta["retrieval_dense"] = {"model": dense.spec["name"], "revision": dense.spec["revision"],
+                                   "chunk_words": dense.chunk_words, "index_sha256": dense.key}
+        dense_file = Path(__file__).parents[1] / "attack" / "dense_retrieval.py"
+        meta["code_sha256"][dense_file.name] = s1_ingest.digest(dense_file.read_bytes())
     if skip:
         # Chỉ ghi khi có đoạn bị đánh dấu: report không có nhiễu giữ nguyên meta và requests như trước H3.
         meta["khong_gui_khau2"] = marked_meta(skip)
@@ -287,10 +316,31 @@ def validate_items(raw: dict, request: dict, segments: list[dict], provenance: d
     return accepted, decisions
 
 
+def source_url(manifest: dict) -> str:
+    return manifest["resolved_source"] if manifest["resolved_source"].startswith(("https://", "http://")) else ""
+
+
+def bundle_iocs(segments: list[dict], provenance: dict, ioc_rules: dict, selected=None) -> list:
+    """IOC bằng regex trên các đoạn đọc được (OCR chưa rà không tính), kèm vị trí và 100 ký tự ngữ cảnh mỗi bên.
+    Không cần LLM: dùng cả khi report chưa trích TTP (cửa quét IOC của API)."""
+    text_segments = [s for s in segments if s1_ingest.extraction_ready(s, provenance)
+                     and (selected is None or s["ma_doan"] in selected)]
+    iocs = s2_ioc.extract_report(text_segments, ioc_rules)
+    for ioc in iocs:
+        p = provenance[ioc.source_span.segment_id]
+        ioc.source_span.section, ioc.source_span.page = p.get("section", ""), p.get("page", 0)
+        body = next(s["van_ban"] for s in segments if s["ma_doan"] == ioc.source_span.segment_id)
+        at = body.find(ioc.value)
+        ioc.source_span.text = body[max(0, at - 100):at + len(ioc.value) + 100]
+    return iocs
+
+
 def run(bundle: Path, stix: Path, prompt_path: Path, llm_config: dict, out: Path,
         ioc_rules: dict, *, send: bool = False, resume: bool = False, llm=None,
-        batch_size: int = 4, top_k: int = 8, accept_partial: bool = False, segments_selected=None) -> dict:
-    meta, requests = prepare(bundle, stix, prompt_path, llm_config, batch_size, top_k, segments_selected)
+        batch_size: int = 4, top_k: int = 8, accept_partial: bool = False, segments_selected=None,
+        retrieval: str = "bm25", encoder=None) -> dict:
+    meta, requests = prepare(bundle, stix, prompt_path, llm_config, batch_size, top_k, segments_selected,
+                             retrieval=retrieval, encoder=encoder)
     meta["ioc_rules_sha256"] = s1_ingest.digest(json.dumps(ioc_rules, sort_keys=True, ensure_ascii=False,
                                                         default=lambda x: sorted(x) if isinstance(x, set) else str(x)).encode())
     fingerprint = s1_ingest.digest(json.dumps(meta, ensure_ascii=False, sort_keys=True).encode())
@@ -357,18 +407,10 @@ def run(bundle: Path, stix: Path, prompt_path: Path, llm_config: dict, out: Path
                 if key not in kept or ttp.confidence > kept[key].confidence:
                     kept[key] = ttp
             s1_ingest.write_json(out / "evidence_audit.json", audit)
-        text_segments = [s for s in segments if s1_ingest.extraction_ready(s, provenance)
-                         and (not meta.get("partial_extraction") or s["ma_doan"] in meta["selected_segments"])]
-        iocs = s2_ioc.extract_report(text_segments, ioc_rules)
-        for ioc in iocs:
-            p = provenance[ioc.source_span.segment_id]
-            ioc.source_span.section, ioc.source_span.page = p.get("section", ""), p.get("page", 0)
-            body = next(s["van_ban"] for s in segments if s["ma_doan"] == ioc.source_span.segment_id)
-            at = body.find(ioc.value)
-            ioc.source_span.text = body[max(0, at - 100):at + len(ioc.value) + 100]
+        iocs = bundle_iocs(segments, provenance, ioc_rules,
+                           meta["selected_segments"] if meta.get("partial_extraction") else None)
         contract = ContractA(report_id=manifest["report_id"], title=manifest["title"],
-                             source_url=manifest["resolved_source"] if manifest["resolved_source"].startswith(("https://", "http://")) else "",
-                             ttps=list(kept.values()), iocs=iocs)
+                             source_url=source_url(manifest), ttps=list(kept.values()), iocs=iocs)
         (out / "contract_a.json").write_text(contract.model_dump_json(indent=2), encoding="utf-8")
         meta.update(status="complete", accepted_ttp=len(kept), rejected_items=sum(d["status"] == "rejected" for d in audit),
                     iocs=len(iocs), semantic_quality="not_evaluated", contract_a_sha256=s1_ingest.digest((out / "contract_a.json").read_bytes()))

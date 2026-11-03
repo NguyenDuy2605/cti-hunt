@@ -1,0 +1,17 @@
+# Set CTI_API_TOKEN (at least 16 characters) in the shell, then `docker compose up --build`.
+services:
+  api:
+    build:
+      context: .
+      args:
+        EXTRAS: ${EXTRAS:-api,ingest,sigma}
+    image: cti-hunt-api:${EXTRAS_TAG:-base}
+    environment:
+      CTI_API_TOKEN: ${CTI_API_TOKEN:?Set CTI_API_TOKEN to a random string of at least 16 characters}
+      CTI_EMBED_CACHE: /app/data/work/embedding_cache
+    volumes:
+      - ./data:/app/data                       # ATT&CK, OTRF log sets, reports, SigmaHQ, job table
+      - ${CTI_MODELS:-./data/models}:/models   # embedding model (embed variant only)
+    ports:
+      - "127.0.0.1:8000:8000"                  # reachable from this machine only
+    restart: unless-stopped

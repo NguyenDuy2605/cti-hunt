@@ -29,7 +29,7 @@ Nine stages. LLMs are used only in ②, ④ and ⑤; everything else is determin
 | Stage | Module | What it does | LLM |
 |---|---|---|---|
 | ① Ingest | `stages/s1_ingest`, `s1_layout`, `s1_ocr`, `s1_segments` | HTML / PDF / image → numbered text segments with provenance hashes; warns about unread regions; local OCR (RapidOCR) whose output must be reviewed before use | no |
-| ② Extract | `stages/s2_ioc`, `s2_ioc_sweep`, `s2_report` | IOCs by regex with defang handling, classified strong / weak / drop before sweeping logs; TTPs plus context by LLM with strict tool use, 8 BM25 candidate techniques per segment, verbatim-quote check | TTP only |
+| ② Extract | `stages/s2_ioc`, `s2_ioc_sweep`, `s2_report` | IOCs by regex with defang handling, classified strong / weak / drop before sweeping logs; TTPs plus context by LLM with strict tool use, 8 candidate techniques per segment (BM25 by default; BM25 + embeddings with `--retrieval lai`, §2.4), verbatim-quote check | TTP only |
 | ③ Telemetry | `stages/s3_telemetry` | Maps each technique to log sources (`configs/telemetry_catalog_v2_2.yaml`, 475 techniques generated from ATT&CK v19.2) and profiles which sources and fields really exist in the dataset | no |
 | ④ Hypothesis | `stages/s4_hypothesis` | LOCK-style hunt hypotheses grounded in the report quote, with optional multi-event constraints (distinct count, absence, anchor) enforced by code | yes |
 | ◆ Review gate | `approval.py` | A human approves or rejects each hypothesis in a YAML form bound to the SHA-256 of its content; ⑤ refuses unapproved hypotheses | no |
@@ -68,6 +68,47 @@ rule are not sent to ④; on six reports this cut the TTPs sent to ④ from 220 
 | Breadth gate | `configs/do_rong_rule.yaml` | A rule that keeps ≥ 50 % of a high-volume source is flagged; the reviewer must keep it with a reason or drop it. The model never sees this count |
 | Grounding warning | `stages/hypothesis_grounding.py` | Flags technical strings in a hypothesis that do not appear in its source quote. Warning only |
 | Cost ledger | `llm/budget.py` | SQLite ledger shared by every paid call; a call reserves its maximum cost before sending and is settled from the returned usage |
+
+### 2.4. Candidate retrieval: BM25, embeddings, hybrid
+
+Stage ② sends each segment with 8 candidate techniques retrieved from the 697 active ATT&CK v19.2 technique definitions.
+BM25 misses a technique when the report and ATT&CK describe the same behaviour in different words ("collected files from
+the compromised machine" vs *Data from Local System*). Three methods were compared on the same index (definitions only, no
+procedure examples) with each target segment as the query:
+
+| Method | Module | How |
+|---|---|---|
+| `bm25` | `attack/retrieval.py` | As used by stage ② |
+| `embedding` | `attack/dense_retrieval.py` | Definitions split into sentence chunks prefixed by the technique name; technique score = cosine of its best chunk; vectors in numpy, or in SQLite through `sqlite-vec` (tested to return identical rankings) |
+| `lai` (hybrid) | same | Reciprocal rank fusion of the two rankings: score = Σ 1/(60 + rank), top 30 of each; constant 60 from Cormack et al. (2009), not tuned |
+
+- **Selection on a development set only:** 400 ATT&CK procedure-example sentences built by `eval/proc_examples.py` (seed
+  `20261001`, SHA-256 `affc0e33…`; sentences quoting the evaluation reports or APT29-related entities excluded). Grid:
+  `BAAI/bge-base-en-v1.5` and `intfloat/e5-base-v2` × chunks of 120 or 300 words. Rule written before running: highest
+  parent-level recall@8 of the embedding method alone. Chosen: `e5-base-v2`, 300 words. On the development set embeddings
+  alone were *worse* than BM25 (recall@8 308–314 vs 324 of 400); only the hybrid was better (333–340).
+- **Pre-registered test, run once** (protocol hashed 03/11/2026 before scoring): the 30-report set of §3 with MITRE's
+  technique mappings as the answer key, parent-technique level, union of each method's top-k over all segments.
+
+| 30 reports, 559 answer-key items | Top-1 | Top-3 | Top-8 | Precision lower bound, top-8 |
+|---|---|---|---|---|
+| BM25 | 306 (55 %) | 406 (73 %) | 474 (85 %) | 474 / 4,465 = 11 % |
+| Embedding | 299 (53 %) | 397 (71 %) | 463 (83 %) | 463 / 3,904 = 12 % |
+| **Hybrid** | 322 (58 %) | 422 (75 %) | **489 (87 %)** | 489 / 4,345 = 11 % |
+
+Primary comparison (hybrid vs BM25, top-8, sign test over reports): hybrid higher on 13 reports, lower on 4, equal on 13,
+**p = 0.049**; exact McNemar on items 30 vs 15, p = 0.036. Embedding alone vs BM25: 9 higher / 11 lower, p = 0.82.
+Techniques found only by the hybrid are mostly behaviour described in plain words (Data from Local System, Remote System
+Discovery, System Service Discovery). Deviation: the secondary set had 7 reports, not the 4 written in the protocol; both are
+reported. Limits: p is close to 0.05 on one 30-report set; the embedding model may have seen ATT&CK pages and the reports
+during pre-training; only the candidate step was measured — no LLM extraction has been run with hybrid candidates. Stage ②
+keeps BM25 as the default (old runs reproduce byte for byte); `extract-report --retrieval lai` turns the hybrid on and
+records the model, revision and index hash in the run metadata.
+
+### 2.5. HTTP API and container
+
+Six endpoints over the same service functions as the interface (`src/cti_hunt/api/`), no LLM calls, background jobs in a
+SQLite job table, Docker image with a non-root user and a health check. See [API.md](API.md).
 
 ## 3. Data and ground truth
 
@@ -185,7 +226,15 @@ python -m cti_hunt community-rules ...                     # SigmaHQ rules for t
 python -m cti_hunt agent start --help                      # full hunt; stops at every review form
 ```
 
-The interface starts with `run_demo.bat` (Windows) or `streamlit run app/streamlit_app.py`.
+The interface starts with `run_demo.bat` (Windows) or `streamlit run app/streamlit_app.py`. The HTTP API starts with
+`python -m cti_hunt api` or `docker compose up --build` ([API.md](API.md)).
+
+Retrieval experiment of §2.4 (needs the `embed` extra; models are downloaded by sentence-transformers):
+
+```bash
+python scripts/do_truy_xuat_embedding.py phat-trien --out <dir>                                   # development set, picks the configuration
+python scripts/do_truy_xuat_embedding.py cham --bo <30-report set> --chon <dir>/ket_qua_de_luyen.json --out <dir2>
+```
 
 Paid model calls need the environment variable `LLM_API_KEY` and go through the cost ledger (`api-budget`). Open models run
 through a local Ollama server. The scripts that produced each reported number are in `scripts/`, for example

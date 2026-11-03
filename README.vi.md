@@ -16,7 +16,7 @@ công khai có nhãn tới từng sự kiện, theo giao thức viết và băm 
 
 | Câu hỏi | Kết quả |
 |---|---|
-| **RQ1 · Đọc report** | TTP: Claude tìm được **45/48** kỹ thuật cha mà MITRE gán cho bốn report; mô hình mở `qwen2.5:7b` 25/48; rcATT huấn luyện lại 12/48. Trên bộ 30 report chọn theo giao thức đặt trước, mô hình 7B có recall thấp hơn gợi ý đứng đầu của BM25 (41 % so với 55 %). IOC: bộ rút regex đã đạt recall 484/493 trên 19 report của 17 nhà xuất bản; LLM lọc IOC không hơn luật viết tay |
+| **RQ1 · Đọc report** | TTP: Claude tìm được **45/48** kỹ thuật cha mà MITRE gán cho bốn report; mô hình mở `qwen2.5:7b` 25/48; rcATT huấn luyện lại 12/48. Trên bộ 30 report chọn theo giao thức đặt trước, mô hình 7B có recall thấp hơn gợi ý đứng đầu của BM25 (41 % so với 55 %). IOC: bộ rút regex đã đạt recall 484/493 trên 19 report của 17 nhà xuất bản; LLM lọc IOC không hơn luật viết tay. Gợi ý ứng viên: gộp BM25 với embedding (`e5-base`, reciprocal rank fusion) đưa 489/559 kỹ thuật đáp án vào 8 gợi ý mỗi đoạn, so với 474/559 của BM25 (kiểm định dấu trên 30 report p = 0,049); embedding đứng một mình không hơn BM25 (463/559) |
 | **RQ2 · Viết phát hiện** | Trên 25 kỹ thuật chọn ngẫu nhiên có nhãn sự kiện (Splunk `attack_data`): rule Sigma do Claude viết bắt **12/25**, rule SigmaHQ mức cao **10/25** (p = 0,75), báo nhầm 4.439 so với 384. Kết hợp hai bên: 16/25 (p = 0,03 so với SigmaHQ), bằng việc bật mọi rule SigmaHQ mức cao. `qwen2.5:7b` / `14b`: 0/25 |
 | **RQ3 · Lớp kiểm soát** | Kiểm tĩnh làm rule của Claude hợp lệ 46/46, nhưng 41 trong 57 rule hợp lệ của mô hình 14B không bao giờ khớp vì sai ngữ nghĩa. **Phép kiểm hình dạng trường** mới bắt 34/41 rule đó trên dữ liệu chưa thấy, không gắn cờ nhầm rule đúng nào (0/61). **Cổng độ rộng** bắt được hunt quá rộng từng thổi kết quả kịch bản lên 17/24 (bỏ nó còn 4–8/24) |
 
@@ -30,7 +30,7 @@ công khai có nhãn tới từng sự kiện, theo giao thức viết và băm 
 ```
 report (HTML/PDF/ảnh)
   ① đọc, chia đoạn, OCR cục bộ chờ người rà
-  ② trích     IOC: regex + luật mạnh/yếu              TTP: LLM + gợi ý BM25 + kiểm câu trích nguyên văn
+  ② trích     IOC: regex + luật mạnh/yếu              TTP: LLM + gợi ý BM25 hoặc lai + kiểm câu trích nguyên văn
   ③ đối chiếu kỹ thuật → nguồn log, kiểm trên chính bộ dữ liệu
   ④ giả thuyết (LLM)  →  ◆ người duyệt (phiếu gắn SHA-256)
   ⑤ rule Sigma (LLM) + kiểm tĩnh, kiểm hình dạng trường, cổng độ rộng; vòng sửa chỉ nhận lỗi tĩnh
@@ -42,6 +42,17 @@ report (HTML/PDF/ảnh)
   trần do mã kiểm và qua cổng người duyệt.
 - **LLM chỉ ở chỗ cần** (②, ④, ⑤); đọc report, đối chiếu log, thực thi, lọc, pivot và hunt record là mã xác định.
 - **Các khâu săn không bao giờ thấy nhãn:** bộ chạy truy vấn từ chối cột nhãn; vòng sửa rule chỉ nhận lỗi tĩnh.
+
+## Dịch vụ và triển khai
+
+- **API HTTP** (`src/cti_hunt/api/`, FastAPI): sáu cửa — nạp report (tệp hoặc URL), dự toán chi phí trích, quét IOC của
+  report trên bộ log, chạy rule SigmaHQ chọn theo kỹ thuật của report, tra kỹ thuật ATT&CK (BM25 hoặc lai), đọc hunt record
+  đã lưu. Không cửa nào gọi LLM. Có token, chỉ nghe máy cục bộ, chặn URL nội bộ (SSRF), giới hạn tệp tải lên. Chi tiết:
+  [docs/API.md](docs/API.md).
+- **Bảng việc:** yêu cầu dài trả `202` và mã việc ngay; một luồng chạy lần lượt và ghi trạng thái vào SQLite, nên việc bị
+  ngắt khi máy chủ khởi động lại hiện `interrupted` chứ không mất dấu.
+- **Docker:** `python:3.12-slim`, người dùng không phải root, kiểm sức khỏe, dữ liệu gắn từ máy. Ảnh cơ bản 416 MB; bản có
+  embedding (PyTorch CPU) 2,24 GB. Đã chạy trọn trong container trên một report thật.
 
 ## Phần kỹ thuật dữ liệu
 
@@ -60,6 +71,7 @@ report (HTML/PDF/ảnh)
 
 ```
 src/cti_hunt/     stages/ (①–⑨), agent/ (graph LangGraph, phiên), adapters/ (Sigma → DuckDB), llm/ (provider, sổ ngân sách),
+                  attack/ (danh mục ATT&CK, truy xuất BM25 và embedding), api/ (FastAPI, bảng việc),
                   eval/ (chỉ số, thống kê: Wilson, McNemar chính xác, kiểm định dấu), hunt/, labels/, cli.py
 app/              giao diện Streamlit, MCP server chỉ đọc hunt record
 configs/          danh mục nguồn log, trần và ngưỡng, cổng độ rộng, cấu hình mô hình
@@ -68,7 +80,8 @@ scripts/          script đo ra mọi con số đã báo, bộ dựng nhãn
 eval/             đầu vào benchmark đã ghim
 tests/            hơn 1.400 test trên dữ liệu tổng hợp (không cần dataset hay khóa API)
 report/           nguồn báo cáo, hình, PDF
-docs/METHODOLOGY.md
+docs/METHODOLOGY.md, docs/API.md
+Dockerfile, docker-compose.yml
 ```
 
 ## Chạy thử
@@ -84,6 +97,15 @@ Repo không kèm dữ liệu. Tải OTRF APT29 day 2, các bộ OTRF theo kỹ t
 (commit `d1c16224`) và ATT&CK Enterprise v19.2, rồi làm theo [Phương pháp §6](docs/METHODOLOGY.md#6-reproducing). Lời gọi
 mô hình trả tiền cần biến môi trường `LLM_API_KEY`; khâu trích mặc định chỉ chuẩn bị prompt và dự toán, chỉ gọi API khi có
 `--send`. Giao diện mở bằng `run_demo.bat` hoặc `streamlit run app/streamlit_app.py`.
+
+API HTTP và Docker:
+
+```bash
+pip install -e ".[api,ingest,sigma]"     # thêm ,embed để tra theo cách lai
+export CTI_API_TOKEN="<chuỗi ngẫu nhiên, ít nhất 16 ký tự>"
+python -m cti_hunt api                   # http://127.0.0.1:8000/docs
+docker compose up --build                # cùng API trong container
+```
 
 ## Giới hạn
 
