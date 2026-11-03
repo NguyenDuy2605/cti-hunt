@@ -118,7 +118,8 @@ chọn ngẫu nhiên. Cổng người duyệt chưa độc lập với trợ lý
 Bắt đầu ngày 19/09/2026, một ngày sau khi nhận việc tại VinSOC, và phát triển trên máy local trong suốt kỳ thực tập
 (18/09 – 22/10/2026). Công bố một lần dưới dạng một bản chụp ngày 26/10/2026. Mốc thời gian nằm sẵn trong các tệp của dự
 án: lần chạy chính thức khâu ② (25/09), hash của protocol viết trước mỗi phép đo có nhãn (từ 16/10), các seed ngẫu nhiên
-cố định, và sổ chi phí của mọi lời gọi trả phí.
+cố định, và sổ chi phí của mọi lời gọi trả phí. Bổ sung ngày 03–04/11/2026: truy xuất lai BM25 + embedding, API HTTP và
+Docker.
 
 ## Tác giả và giấy phép
 

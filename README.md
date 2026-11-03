@@ -123,7 +123,8 @@ assistant that proposed decisions. See the [report](report/cti-hunt-report.pdf) 
 Started on 19 September 2026, the day after onboarding at VinSOC, and built locally during the internship
 (18 September – 22 October 2026). Published as a single snapshot on 26 October 2026. The timeline is recorded in the
 artefacts themselves: the official extraction run (25 September), protocol hashes written before each labelled
-measurement (from 16 October), the fixed random seeds, and the cost ledger of every paid call.
+measurement (from 16 October), the fixed random seeds, and the cost ledger of every paid call. Added on 3–4 November
+2026: hybrid BM25 + embedding retrieval, the HTTP API and Docker.
 
 ## Author and license
 
