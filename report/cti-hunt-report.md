@@ -11,7 +11,9 @@ whether the LLM beats a method that does not use one.
 
 - **Reading the report (RQ1).** For techniques (TTPs), a large model is clearly better than retrieval or classical ML:
   Claude found 45 of 48 parent techniques that MITRE maps to four reports, against 25/48 for an open 7B model and 12/48 for a
-  retrained rcATT. A 7B model is *not* better than BM25 retrieval on recall. For IOCs, a regular-expression extractor is
+  retrained rcATT. A 7B model is *not* better than BM25 retrieval on recall. For the candidate techniques shown to the
+  model, fusing BM25 with dense embeddings beat BM25 alone (489 vs 474 of 559 on 30 reports, p = 0.049); embeddings alone
+  did not. For IOCs, a regular-expression extractor is
   enough (484/493 recall on 19 reports); an LLM filter did not beat hand-written rules.
 - **Writing detections (RQ2).** On 25 randomly sampled techniques with event-level labels, Claude-written Sigma rules
   detected 12, SigmaHQ high-level community rules 10 (not significantly different, p = 0.75), with about 11 times the
@@ -32,7 +34,7 @@ in false positives.
 | Stage | Method | LLM |
 |---|---|---|
 | ① Ingest | HTML / PDF / image → segments with provenance hashes; local OCR held for review | no |
-| ② Extract | IOC: regex with defang handling, strong/weak classification. TTP: LLM with strict tool use, 8 BM25 candidates per segment, verbatim-quote check | TTP |
+| ② Extract | IOC: regex with defang handling, strong/weak classification. TTP: LLM with strict tool use, 8 candidates per segment (BM25, or BM25 + embeddings), verbatim-quote check | TTP |
 | ③ Telemetry | Technique → log sources (475-technique catalogue from ATT&CK v19.2), profiled on the actual dataset | no |
 | ④ Hypothesis | Hunt hypotheses grounded in a report quote, optional multi-event constraints enforced by code | yes |
 | ◆ Review | Human approves each hypothesis; form bound to the SHA-256 of the content | no |
@@ -44,7 +46,8 @@ whether to pivot and when to stop, always under code-enforced caps and the revie
 community rules selected by the report's techniques, and can restrict LLM hypothesis generation to techniques that no
 high-level community rule covers (on six reports: 220 → 37 TTPs sent to the model).
 
-Engineering: Python, DuckDB, pySigma, LangGraph, Streamlit, a local MCP server; every run is reproducible from stored
+Engineering: Python, DuckDB, pySigma, LangGraph, Streamlit, a local MCP server, a FastAPI service with a SQLite job table
+packaged in Docker (no endpoint calls an LLM), sentence-transformers and sqlite-vec for dense retrieval; every run is reproducible from stored
 hashes of inputs, prompts, configuration and code; paid calls go through a shared cost ledger that reserves the maximum
 cost before each call. Total API spend for the project was about 44 USD. The test suite has more than 1,400 tests on
 synthetic fixtures.
@@ -81,7 +84,27 @@ in-sample. Details: `docs/METHODOLOGY.md`.
   24 of 30. The advantage belongs to the large model, not to "an LLM".
 - The verbatim-quote check cost the 7B model 89 of 559 answer-key items (quotes not found in the source); Claude lost 0 on the Volt Typhoon report.
 
-### 3.2. IOC extraction
+### 3.2. Candidate retrieval: BM25, embeddings, hybrid
+
+BM25 misses a technique when the report and ATT&CK describe the same behaviour in different words. The same index of 697
+technique definitions was searched three ways: BM25; dense embeddings (`e5-base-v2`, definitions chunked by sentence, a
+technique scored by its best chunk); and reciprocal rank fusion of the two. The model and chunk size were chosen on a
+separate development set of 400 ATT&CK procedure examples; the test on the 30-report set was pre-registered and run once.
+
+| 30 reports, 559 parent techniques | Top-1 | Top-8 | Precision, top-8 |
+|---|---|---|---|
+| BM25 | 306 (55%) | 474 (85%) | ≥ 0.11 |
+| Embeddings | 299 (53%) | 463 (83%) | ≥ 0.12 |
+| **Hybrid** | 322 (58%) | **489 (87%)** | ≥ 0.11 |
+
+- Hybrid vs BM25 at top-8: higher on 13 reports, lower on 4 (sign test p = 0.049). Embeddings alone vs BM25: 9 higher, 11
+  lower (p = 0.82); they were also worse than BM25 on the development set. CTI reports name commands and tools, which is
+  what keyword search is good at; embeddings add the behaviour written in plain words (*Data from Local System*, *Remote
+  System Discovery*).
+- The gain is small and measured only at the candidate step; no LLM extraction has been run with hybrid candidates yet. The
+  extraction stage keeps BM25 as the default and offers the hybrid as an option.
+
+### 3.3. IOC extraction
 
 | 19 reports, 17 publishers, 493 author IOCs | Recall | Precision |
 |---|---|---|
@@ -158,4 +181,6 @@ syntax inside an equality, a file extension placed on the wrong field.
 - Claude's TTP extraction was measured on 4 reports; the 30-report set was measured with non-LLM methods and a 7B model only.
   Claude's rule generation was measured on a random sample of 25 of the 55 eligible techniques.
 - IOC classification rules were tuned on the reports they were measured on; only out-of-sample figures are unbiased.
+- Hybrid retrieval was tested on one 30-report set (p close to 0.05), and the embedding model may have seen ATT&CK and
+  these reports during pre-training.
 - Claude 5 models accept no sampling parameters, so runs are not bit-for-bit repeatable; raw responses are stored.

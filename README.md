@@ -1,6 +1,6 @@
 # cti-hunt — from CTI reports to verified threat hunts, and where LLMs actually help
 
-[Tiếng Việt](README.vi.md) · [Report (PDF, 5 pages)](report/cti-hunt-report.pdf) · [Methodology](docs/METHODOLOGY.md)
+[Tiếng Việt](README.vi.md) · [Report (PDF, 6 pages)](report/cti-hunt-report.pdf) · [Methodology](docs/METHODOLOGY.md)
 
 A threat-hunting team reads a cyber-threat-intelligence (CTI) report and must turn its prose into hunts that run on its own
 Windows logs. **cti-hunt** does this end to end — report → IOCs and ATT&CK techniques → hunt hypotheses → human review →

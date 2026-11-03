@@ -1,6 +1,6 @@
 # cti-hunt — từ CTI report tới cuộc săn có kiểm chứng, và LLM thực sự giúp ở đâu
 
-[English](README.md) · [Báo cáo (PDF tiếng Anh, 5 trang)](report/cti-hunt-report.pdf) · [Phương pháp](docs/METHODOLOGY.md)
+[English](README.md) · [Báo cáo (PDF tiếng Anh, 6 trang)](report/cti-hunt-report.pdf) · [Phương pháp](docs/METHODOLOGY.md)
 
 Một đội săn mối đe dọa (threat hunting) đọc một báo cáo tình báo mối đe dọa (CTI report) rồi phải biến phần văn xuôi đó
 thành truy vấn chạy trên log Windows của chính mình. **cti-hunt** làm việc này từ đầu đến cuối — report → IOC và kỹ thuật
